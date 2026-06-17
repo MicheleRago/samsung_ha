@@ -37,6 +37,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, "samsungce.powerCool", "activated", "activate", "Power Cool", "mdi:snowflake-alert", on_value=True, off_value=False, command_off="deactivate", on_arg=[], off_arg=[]))
             if "samsungce.powerFreeze" in status:
                 switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, "samsungce.powerFreeze", "activated", "activate", "Power Freeze", "mdi:snowflake-alert", on_value=True, off_value=False, command_off="deactivate", on_arg=[], off_arg=[]))
+            if "samsungce.fridgeVacationMode" in status:
+                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, "samsungce.fridgeVacationMode", "vacationMode", "on", "Vacation Mode", "mdi:palm-tree", on_value="on", off_value="off", command_off="off", on_arg=[], off_arg=[]))
 
     async_add_entities(switches)
 
