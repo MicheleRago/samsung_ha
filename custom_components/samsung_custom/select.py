@@ -21,7 +21,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             name = f"{device_name} ({comp_name})" if comp_name != "main" else device_name
 
             if CAP_WASHING_COURSE in status:
-                selects.append(GenericCourseSelect(coordinator, device_id, comp_name, name, CAP_WASHING_COURSE, "washingCourse", "setDishwasherWashingCourse", "Dishwasher Course"))
+                selects.append(GenericCourseSelect(coordinator, device_id, comp_name, name, CAP_WASHING_COURSE, "washingCourse", "setWashingCourse", "Dishwasher Course"))
                 
             if CAP_WASHER_COURSE in status:
                 selects.append(GenericCourseSelect(coordinator, device_id, comp_name, name, CAP_WASHER_COURSE, "washerCycle", "setWasherCycle", "Washer Course"))
