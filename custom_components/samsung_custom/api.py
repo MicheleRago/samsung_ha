@@ -35,16 +35,16 @@ class SmartThingsApi:
             async with session.get(url, headers=self.headers) as response:
                 response.raise_for_status()
                 data = await response.json()
-                return data.get("components", {}).get("main", {})
+                return data.get("components", {})
 
-    async def execute_command(self, device_id: str, capability: str, command: str, arguments: list = None) -> None:
+    async def execute_command(self, device_id: str, component: str, capability: str, command: str, arguments: list = None) -> None:
         """Execute a command on the device."""
         url = f"{BASE_URL}/devices/{device_id}/commands"
         
         payload = {
             "commands": [
                 {
-                    "component": "main",
+                    "component": component,
                     "capability": capability,
                     "command": command,
                     "arguments": arguments or []
@@ -55,4 +55,4 @@ class SmartThingsApi:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=self.headers, json=payload) as response:
                 response.raise_for_status()
-                _LOGGER.debug(f"Command executed successfully: {capability}.{command}({arguments})")
+                _LOGGER.debug(f"Command executed successfully: {component}.{capability}.{command}({arguments})")
