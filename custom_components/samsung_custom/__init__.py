@@ -2,7 +2,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, CONF_PAT
+from .const import DOMAIN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_ACCESS_TOKEN, CONF_REFRESH_TOKEN
 from .api import SmartThingsApi
 from .coordinator import SmartThingsCoordinator
 
@@ -14,9 +14,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Samsung Custom Appliances from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    pat = entry.data[CONF_PAT]
+    client_id = entry.data.get(CONF_CLIENT_ID)
+    client_secret = entry.data.get(CONF_CLIENT_SECRET)
+    access_token = entry.data.get(CONF_ACCESS_TOKEN)
+    refresh_token = entry.data.get(CONF_REFRESH_TOKEN)
 
-    api = SmartThingsApi(pat)
+    async def save_tokens(new_access, new_refresh):
+        new_data = {**entry.data}
+        new_data[CONF_ACCESS_TOKEN] = new_access
+        new_data[CONF_REFRESH_TOKEN] = new_refresh
+        hass.config_entries.async_update_entry(entry, data=new_data)
+
+    api = SmartThingsApi(client_id, client_secret, access_token, refresh_token, save_tokens)
     coordinator = SmartThingsCoordinator(hass, api)
 
     await coordinator.async_init()

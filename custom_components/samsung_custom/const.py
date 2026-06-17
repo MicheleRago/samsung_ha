@@ -1,7 +1,10 @@
 from datetime import timedelta
 
 DOMAIN = "samsung_custom"
-CONF_PAT = "personal_access_token"
+CONF_CLIENT_ID = "client_id"
+CONF_CLIENT_SECRET = "client_secret"
+CONF_REFRESH_TOKEN = "refresh_token"
+CONF_ACCESS_TOKEN = "access_token"
 
 UPDATE_INTERVAL = timedelta(seconds=60)
 
