@@ -62,7 +62,10 @@ class GenericCourseSelect(CoordinatorEntity, SelectEntity):
         data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
         if not data:
             return None
-        return data.get(self._capability, {}).get(self._attribute, {}).get("value")
+        val = data.get(self._capability, {}).get(self._attribute, {}).get("value")
+        if val and isinstance(val, str) and "_Course_" in val:
+            return val.split("_Course_")[-1]
+        return val
 
     @property
     def options(self):
@@ -71,18 +74,29 @@ class GenericCourseSelect(CoordinatorEntity, SelectEntity):
         if not data:
             return []
         
-        # Le opzioni possono chiamarsi supportedCourses o supportedCycles
         cap_data = data.get(self._capability, {})
         supported = cap_data.get("supportedCourses", {}).get("value")
         if not supported:
             supported = cap_data.get("supportedCycles", {}).get("value")
+            
+        if isinstance(supported, list) and len(supported) > 0 and isinstance(supported[0], dict):
+            # Array di oggetti (es. per lavasciuga)
+            return [str(item.get("cycle")) for item in supported if "cycle" in item]
         
         return supported or []
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
+        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        cap_data = data.get(self._capability, {})
+        ref_table = cap_data.get("referenceTable", {}).get("value", {}).get("id")
+        
+        val_to_send = option
+        if ref_table and "_Course_" not in option:
+            val_to_send = f"{ref_table}_Course_{option}"
+
         import asyncio
-        await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, self._command, [option])
+        await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, self._command, [val_to_send])
         await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
 
