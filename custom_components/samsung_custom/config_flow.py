@@ -54,10 +54,15 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 query_params = urllib.parse.parse_qs(parsed_url.query)
                 auth_code = query_params.get("code", [None])[0]
                 
+                redirect_uri_used = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
+                # Forza il redirect_uri corretto se Google ha aggiunto www. o la barra finale
+                if "google.com" in redirect_uri_used:
+                    redirect_uri_used = REDIRECT_URI
+                
                 if not auth_code:
                     errors["base"] = "invalid_code"
                 else:
-                    return await self._exchange_code_for_token(auth_code)
+                    return await self._exchange_code_for_token(auth_code, redirect_uri_used)
             except Exception:
                 errors["base"] = "invalid_url"
 
@@ -76,14 +81,14 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
 
-    async def _exchange_code_for_token(self, auth_code: str):
+    async def _exchange_code_for_token(self, auth_code: str, redirect_uri: str):
         """Exchange the auth code for access and refresh tokens."""
         payload = {
             "grant_type": "authorization_code",
             "client_id": self.client_id,
             "client_secret": self.client_secret,
             "code": auth_code,
-            "redirect_uri": REDIRECT_URI
+            "redirect_uri": redirect_uri
         }
         headers = {
             "Content-Type": "application/x-www-form-urlencoded"
