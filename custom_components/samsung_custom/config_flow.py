@@ -2,11 +2,11 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, CONF_PAT, CONF_DEVICE_ID
+from .const import DOMAIN, CONF_PAT
 from .api import SmartThingsApi
 
-class SamsungDishwasherConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Samsung Dishwasher."""
+class SamsungCustomConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for Samsung Custom Appliances."""
 
     VERSION = 1
 
@@ -16,18 +16,19 @@ class SamsungDishwasherConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             pat = user_input[CONF_PAT]
-            device_id = user_input[CONF_DEVICE_ID]
 
-            api = SmartThingsApi(pat, device_id)
+            api = SmartThingsApi(pat)
             try:
-                await api.get_device_status()
-                return self.async_create_entry(title="Samsung Dishwasher", data=user_input)
+                devices = await api.get_devices()
+                if not devices:
+                    errors["base"] = "no_devices"
+                else:
+                    return self.async_create_entry(title="Samsung Appliances", data=user_input)
             except Exception:
                 errors["base"] = "cannot_connect"
 
         data_schema = vol.Schema({
             vol.Required(CONF_PAT): str,
-            vol.Required(CONF_DEVICE_ID): str,
         })
 
         return self.async_show_form(
@@ -35,3 +36,4 @@ class SamsungDishwasherConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=data_schema,
             errors=errors,
         )
+

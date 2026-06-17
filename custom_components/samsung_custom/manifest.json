@@ -1,6 +1,6 @@
 {
-  "domain": "samsung_dishwasher",
-  "name": "Samsung Dishwasher Custom",
+  "domain": "samsung_custom",
+  "name": "Samsung Custom Appliances",
   "codeowners": ["@michele"],
   "config_flow": true,
   "dependencies": [],

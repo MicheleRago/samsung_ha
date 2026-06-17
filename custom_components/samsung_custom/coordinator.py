@@ -14,6 +14,7 @@ class SmartThingsCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, api: SmartThingsApi):
         """Initialize."""
         self.api = api
+        self.devices = []
         super().__init__(
             hass,
             _LOGGER,
@@ -21,9 +22,23 @@ class SmartThingsCoordinator(DataUpdateCoordinator):
             update_interval=UPDATE_INTERVAL,
         )
 
+    async def async_init(self):
+        """Fetch devices before first update."""
+        self.devices = await self.api.get_devices()
+
     async def _async_update_data(self):
-        """Update data via library."""
+        """Update data via API."""
         try:
-            return await self.api.get_device_status()
+            data = {}
+            for device in self.devices:
+                device_id = device.get("deviceId")
+                if device_id:
+                    status = await self.api.get_device_status(device_id)
+                    data[device_id] = {
+                        "device_info": device,
+                        "status": status
+                    }
+            return data
         except Exception as exception:
             raise UpdateFailed(f"Error communicating with API: {exception}")
+
