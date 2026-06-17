@@ -1,0 +1,31 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SmartThings OAuth2",
+        "description": "Inserisci il Client ID e il Client Secret del tuo progetto SmartThings.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret"
+        }
+      },
+      "auth": {
+        "title": "Autorizzazione Account",
+        "description": "1. Clicca su questo link per autorizzare l'integrazione:\n\n{auth_link}\n\n2. Fai il login con l'account Samsung e clicca Autorizza.\n3. Verrai reindirizzato al sito di Google. **Copia l'intero URL** in alto nel tuo browser (inizierà con https://google.com/?code=...) e incollalo qui sotto.",
+        "data": {
+          "auth_url": "URL copiato dal browser"
+        }
+      }
+    },
+    "error": {
+      "invalid_code": "Nessun codice trovato nell'URL. Assicurati di copiare l'URL completo.",
+      "invalid_url": "L'URL incollato non \u00e8 valido.",
+      "missing_tokens": "Impossibile ottenere i token da SmartThings. Riprova.",
+      "oauth_error": "Errore durante la comunicazione con SmartThings."
+    },
+    "abort": {
+      "missing_tokens": "Impossibile ottenere i token da SmartThings. Riprova.",
+      "oauth_error": "Errore durante la comunicazione con SmartThings."
+    }
+  }
+}
