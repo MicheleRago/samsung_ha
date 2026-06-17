@@ -68,7 +68,9 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Handle the button press."""
+        import asyncio
         await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, "setMachineState", [self._command_arg])
+        await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
 
 

@@ -56,12 +56,16 @@ class GenericPowerSwitch(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs):
         """Turn the device on."""
+        import asyncio
         await self.coordinator.api.execute_command(self._device_id, self._component, CAP_SWITCH, "on")
+        await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):
         """Turn the device off."""
+        import asyncio
         await self.coordinator.api.execute_command(self._device_id, self._component, CAP_SWITCH, "off")
+        await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
 
 

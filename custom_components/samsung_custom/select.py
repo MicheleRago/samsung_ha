@@ -81,7 +81,9 @@ class GenericCourseSelect(CoordinatorEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
+        import asyncio
         await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, self._command, [option])
+        await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
 
 
