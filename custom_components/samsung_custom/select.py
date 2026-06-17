@@ -56,6 +56,31 @@ class GenericCourseSelect(CoordinatorEntity, SelectEntity):
             "manufacturer": "Samsung",
         }
 
+    def _translate_code(self, code):
+        """Map code to name if possible, otherwise return code."""
+        if not code:
+            return code
+            
+        if isinstance(code, str) and "_Course_" in code:
+            code = code.split("_Course_")[-1]
+            
+        if self._capability in (CAP_WASHER_COURSE, CAP_DRYER_COURSE):
+            from .const import SAMSUNG_WASHER_CYCLES
+            return SAMSUNG_WASHER_CYCLES.get(code, f"Cycle {code}")
+            
+        return code
+
+    def _reverse_translate(self, name):
+        """Map name back to code if possible, otherwise return name."""
+        if self._capability in (CAP_WASHER_COURSE, CAP_DRYER_COURSE):
+            from .const import SAMSUNG_WASHER_CYCLES
+            for code, translated_name in SAMSUNG_WASHER_CYCLES.items():
+                if translated_name == name:
+                    return code
+            if name.startswith("Cycle "):
+                return name.replace("Cycle ", "")
+        return name
+
     @property
     def current_option(self):
         """Return the current selected option."""
@@ -63,9 +88,7 @@ class GenericCourseSelect(CoordinatorEntity, SelectEntity):
         if not data:
             return None
         val = data.get(self._capability, {}).get(self._attribute, {}).get("value")
-        if val and isinstance(val, str) and "_Course_" in val:
-            return val.split("_Course_")[-1]
-        return val
+        return self._translate_code(val)
 
     @property
     def options(self):
@@ -81,19 +104,21 @@ class GenericCourseSelect(CoordinatorEntity, SelectEntity):
             
         if isinstance(supported, list) and len(supported) > 0 and isinstance(supported[0], dict):
             # Array di oggetti (es. per lavasciuga)
-            return [str(item.get("cycle")) for item in supported if "cycle" in item]
+            return [self._translate_code(str(item.get("cycle"))) for item in supported if "cycle" in item]
         
-        return supported or []
+        return [self._translate_code(opt) for opt in (supported or [])]
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
+        raw_option = self._reverse_translate(option)
+        
         data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
         cap_data = data.get(self._capability, {})
         ref_table = cap_data.get("referenceTable", {}).get("value", {}).get("id")
         
-        val_to_send = option
-        if ref_table and "_Course_" not in option:
-            val_to_send = f"{ref_table}_Course_{option}"
+        val_to_send = raw_option
+        if ref_table and "_Course_" not in raw_option:
+            val_to_send = f"{ref_table}_Course_{raw_option}"
 
         import asyncio
         await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, self._command, [val_to_send])

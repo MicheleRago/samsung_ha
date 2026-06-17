@@ -22,3 +22,38 @@ CAP_OVEN_OPERATING_STATE = "samsungce.ovenOperatingState"
 CAP_TEMPERATURE_MEASUREMENT = "temperatureMeasurement"
 CAP_THERMOSTAT_COOLING = "thermostatCoolingSetpoint"
 
+SAMSUNG_WASHER_CYCLES = {
+    "01": "Cotton",
+    "02": "Synthetics",
+    "03": "Wool",
+    "04": "Hand Wash",
+    "05": "Daily Wash",
+    "06": "Quick Wash",
+    "07": "Intensive Cold",
+    "08": "Super Eco Wash",
+    "09": "Super Eco Wash",
+    "0A": "Bedding",
+    "0B": "15' Quick Wash",
+    "0C": "Rinse + Spin",
+    "0D": "Spin",
+    "0E": "Drain/Spin",
+    "11": "Drum Clean",
+    "1C": "Eco 40-60",
+    "1D": "Speed Wash+Dry",
+    "1E": "Outdoor Care",
+    "1F": "Baby Care",
+    "21": "Denim",
+    "2B": "Active Wear",
+    "2C": "Colors",
+    "35": "Towels",
+    "37": "Dry Only",
+    "38": "Cotton Dry",
+    "39": "Synthetics Dry",
+    "7F": "Mixed Load",
+    "96": "Silent Wash",
+    "A0": "Wash and Dry",
+    "A1": "Air Wash",
+    "A2": "Deodorization",
+    "A3": "Sanitization",
+}
+
