@@ -66,9 +66,10 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except Exception:
                 errors["base"] = "invalid_url"
 
-        safe_client_id = urllib.parse.quote(self.client_id)
-        safe_redirect_uri = urllib.parse.quote(REDIRECT_URI)
-        auth_link = f"{OAUTH_AUTH_URL}?client_id={safe_client_id}&response_type=code&redirect_uri={safe_redirect_uri}&scope=r:devices:* x:devices:*"
+        safe_client_id = urllib.parse.quote(self.client_id, safe='')
+        safe_redirect_uri = urllib.parse.quote(REDIRECT_URI, safe='')
+        safe_scope = urllib.parse.quote("r:devices:* x:devices:*", safe='')
+        auth_link = f"{OAUTH_AUTH_URL}?client_id={safe_client_id}&response_type=code&redirect_uri={safe_redirect_uri}&scope={safe_scope}"
 
         return self.async_show_form(
             step_id="auth",
@@ -86,17 +87,17 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         payload = {
             "grant_type": "authorization_code",
             "client_id": self.client_id,
-            "client_secret": self.client_secret,
             "code": auth_code,
             "redirect_uri": redirect_uri
         }
         headers = {
             "Content-Type": "application/x-www-form-urlencoded"
         }
+        auth = aiohttp.BasicAuth(self.client_id, self.client_secret)
         
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(OAUTH_TOKEN_URL, data=payload, headers=headers) as response:
+                async with session.post(OAUTH_TOKEN_URL, data=payload, headers=headers, auth=auth) as response:
                     response.raise_for_status()
                     data = await response.json()
                     

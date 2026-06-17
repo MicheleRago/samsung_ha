@@ -38,15 +38,15 @@ class SmartThingsApi:
         payload = {
             "grant_type": "refresh_token",
             "client_id": self.client_id,
-            "client_secret": self.client_secret,
             "refresh_token": self.refresh_token
         }
         headers = {
             "Content-Type": "application/x-www-form-urlencoded"
         }
+        auth = aiohttp.BasicAuth(self.client_id, self.client_secret)
         
         async with aiohttp.ClientSession() as session:
-            async with session.post(OAUTH_TOKEN_URL, data=payload, headers=headers) as response:
+            async with session.post(OAUTH_TOKEN_URL, data=payload, headers=headers, auth=auth) as response:
                 response.raise_for_status()
                 data = await response.json()
                 
