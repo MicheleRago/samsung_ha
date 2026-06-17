@@ -44,14 +44,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_REMOTE_CONTROL, "remoteControlEnabled", "Remote Control", "mdi:remote"))
                 
             if CAP_TEMPERATURE_MEASUREMENT in status:
-                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_TEMPERATURE_MEASUREMENT, "temperature", "Temperature", "mdi:thermometer"))
+                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_TEMPERATURE_MEASUREMENT, "temperature", "Temperature", "mdi:thermometer", "temperature", "°C"))
 
     async_add_entities(sensors)
 
 class GenericStateSensor(CoordinatorEntity, SensorEntity):
     """Generic sensor for device state."""
 
-    def __init__(self, coordinator, device_id, component, device_name, capability, attribute, name, icon):
+    def __init__(self, coordinator, device_id, component, device_name, capability, attribute, name, icon, device_class=None, unit_of_measurement=None):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._device_id = device_id
@@ -63,8 +63,15 @@ class GenericStateSensor(CoordinatorEntity, SensorEntity):
         comp_prefix = f"_{component}" if component != "main" else ""
         self._attr_unique_id = f"{device_id}{comp_prefix}_{capability}_{attribute}"
         
-        self._attr_name = name
+        # Add a prefix to the name based on the component if not main
+        if component != "main":
+            self._attr_name = f"{component.capitalize()} {name}"
+        else:
+            self._attr_name = name
+            
         self._attr_icon = icon
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit_of_measurement
         self._attr_has_entity_name = True
 
     @property

@@ -24,10 +24,22 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 switches.append(GenericPowerSwitch(coordinator, device_id, comp_name, name_prefix))
                 
             if CAP_WASHING_OPTIONS in status:
-                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, CAP_WASHING_OPTIONS, "halfLoad", "setHalfLoad", "Half Load", "mdi:washing-machine"))
-                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, CAP_WASHING_OPTIONS, "speedBooster", "setSpeedBooster", "Speed Booster", "mdi:fast-forward"))
-                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, CAP_WASHING_OPTIONS, "sanitization", "setSanitization", "Sanitization", "mdi:water-boiler"))
-                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, CAP_WASHING_OPTIONS, "autoReleaseDry", "setAutoReleaseDry", "Auto Release Dry", "mdi:door-open"))
+                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, CAP_WASHING_OPTIONS, "selectedZone", "setSelectedZone", "Half Load", "mdi:washing-machine", on_value="lower", off_value="all"))
+                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, CAP_WASHING_OPTIONS, "speedBooster", "setSpeedBooster", "Speed Booster", "mdi:fast-forward", on_value=True, off_value=False))
+                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, CAP_WASHING_OPTIONS, "sanitize", "setSanitize", "Sanitization", "mdi:water-boiler", on_value=True, off_value=False))
+                
+            # Asciugatura rilascio automatico
+            if "samsungce.autoOpenDoor" in status:
+                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, "samsungce.autoOpenDoor", "autoOpenDoor", "setAutoOpenDoor", "Auto Release Dry", "mdi:door-open", on_value="on", off_value="off"))
+
+            # Frigo options
+            if "samsungce.powerCool" in status:
+                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, "samsungce.powerCool", "activated", "setPowerCool", "Power Cool", "mdi:snowflake-alert", on_value=True, off_value=False))
+            if "samsungce.powerFreeze" in status:
+                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, "samsungce.powerFreeze", "activated", "setPowerFreeze", "Power Freeze", "mdi:snowflake-alert", on_value=True, off_value=False))
+            if "samsungce.fridgeVacationMode" in status:
+                switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, "samsungce.fridgeVacationMode", "vacationMode", "setVacationMode", "Vacation Mode", "mdi:palm-tree", on_value="on", off_value="off"))
+
             
     async_add_entities(switches)
 
@@ -79,7 +91,7 @@ class GenericPowerSwitch(CoordinatorEntity, SwitchEntity):
 class GenericOptionSwitch(CoordinatorEntity, SwitchEntity):
     """Switch for generic options."""
 
-    def __init__(self, coordinator, device_id, component, device_name, capability, attribute, command, name, icon):
+    def __init__(self, coordinator, device_id, component, device_name, capability, attribute, command, name, icon, on_value="on", off_value="off"):
         super().__init__(coordinator)
         self._device_id = device_id
         self._component = component
@@ -87,6 +99,8 @@ class GenericOptionSwitch(CoordinatorEntity, SwitchEntity):
         self._capability = capability
         self._attribute = attribute
         self._command = command
+        self._on_value = on_value
+        self._off_value = off_value
         
         comp_prefix = f"_{component}" if component != "main" else ""
         self._attr_unique_id = f"{device_id}{comp_prefix}_{capability}_{attribute}"
@@ -109,18 +123,25 @@ class GenericOptionSwitch(CoordinatorEntity, SwitchEntity):
         if not data:
             return False
         val = data.get(self._capability, {}).get(self._attribute, {}).get("value")
-        return val == "on" or val == True
+        
+        # Some values are dictionaries like {"value": False, "settable": [False, True]}
+        if isinstance(val, dict) and "value" in val:
+            val = val.get("value")
+            
+        return val == self._on_value
 
     async def async_turn_on(self, **kwargs):
         """Turn the option on."""
         import asyncio
-        await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, self._command, ["on"])
+        args = [self._on_value] if self._on_value is not None else []
+        await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, self._command, args)
         await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):
         """Turn the option off."""
         import asyncio
-        await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, self._command, ["off"])
+        args = [self._off_value] if self._off_value is not None else []
+        await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, self._command, args)
         await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()

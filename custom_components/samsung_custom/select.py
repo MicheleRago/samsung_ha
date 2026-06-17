@@ -28,8 +28,64 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 
             if CAP_DRYER_COURSE in status:
                 selects.append(GenericCourseSelect(coordinator, device_id, comp_name, name, CAP_DRYER_COURSE, "dryerCycle", "setDryerCycle", "Dryer Course"))
+                
+            # Frigo options
+            if "samsungce.freezerConvertMode" in status:
+                selects.append(GenericOptionSelect(coordinator, device_id, comp_name, name, "samsungce.freezerConvertMode", "freezerConvertMode", "supportedFreezerConvertModes", "setFreezerConvertMode", "Freezer Mode"))
             
     async_add_entities(selects)
+
+class GenericOptionSelect(CoordinatorEntity, SelectEntity):
+    """Select for generic options like freezer convert mode."""
+
+    def __init__(self, coordinator, device_id, component, device_name, capability, attribute, options_attribute, command, name):
+        super().__init__(coordinator)
+        self._device_id = device_id
+        self._component = component
+        self._device_name = device_name
+        self._capability = capability
+        self._attribute = attribute
+        self._options_attribute = options_attribute
+        self._command = command
+        
+        comp_prefix = f"_{component}" if component != "main" else ""
+        self._attr_unique_id = f"{device_id}{comp_prefix}_{capability}_{attribute}"
+        self._attr_name = name
+        self._attr_has_entity_name = True
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, self._device_id)},
+            "name": self._device_name.replace(f" ({self._component})", ""),
+            "manufacturer": "Samsung",
+        }
+
+    @property
+    def current_option(self):
+        """Return the current selected option."""
+        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        if not data:
+            return None
+        return data.get(self._capability, {}).get(self._attribute, {}).get("value")
+
+    @property
+    def options(self):
+        """Return a set of selectable options."""
+        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        if not data:
+            return []
+        
+        supported = data.get(self._capability, {}).get(self._options_attribute, {}).get("value")
+        return supported or []
+
+    async def async_select_option(self, option: str) -> None:
+        """Change the selected option."""
+        import asyncio
+        await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, self._command, [option])
+        await asyncio.sleep(2)
+        await self.coordinator.async_request_refresh()
+
 
 class GenericCourseSelect(CoordinatorEntity, SelectEntity):
     """Select for washing/drying course."""
