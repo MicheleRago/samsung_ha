@@ -267,6 +267,7 @@ class SamsungOvenCard extends HTMLElement {
     
     const isRunning = ovenState && ['running', 'cooking', 'preheating', 'In Cottura', 'Preriscaldamento'].includes(ovenState.state);
     const isRemoteEnabled = remote && remote.state === 'on';
+    const isLightOn = light && light.state === 'on';
 
     let stateText = ovenState ? ovenState.state : 'Unknown';
     if (currentTemp && currentTemp.state !== 'unknown') {
@@ -311,7 +312,6 @@ class SamsungOvenCard extends HTMLElement {
 
     this.content.innerHTML = `
       <div class="hero ${isRunning ? 'running' : ''}">
-        <ha-icon class="remote-icon ${!isRemoteEnabled ? 'disabled' : ''}" icon="${isRemoteEnabled ? 'mdi:remote' : 'mdi:remote-off'}" title="Smart Control"></ha-icon>
         <ha-icon icon="${config.icon || 'mdi:stove'}"></ha-icon>
         <div class="hero-title">${config.name || 'Samsung Oven'}</div>
         <div class="hero-subtitle">${stateText}</div>
@@ -349,14 +349,6 @@ class SamsungOvenCard extends HTMLElement {
             <button data-action="num_up" data-entity="${config.entities.cook_time}"><ha-icon icon="mdi:plus"></ha-icon></button>
           </div>
         </div>
-
-        <!-- Light -->
-        <div class="tile switch ${light && light.state === 'on' ? 'active' : ''}" data-action="toggle" data-entity="${config.entities.light}">
-          <div class="tile-header" style="margin: 0;">
-            <div class="tile-icon"><ha-icon icon="mdi:lightbulb"></ha-icon></div>
-            <div class="tile-title">Luce Forno</div>
-          </div>
-        </div>
       </div>
 
       <!-- Mode Select -->
@@ -376,6 +368,13 @@ class SamsungOvenCard extends HTMLElement {
 
       <!-- Action Buttons -->
       <div class="actions">
+        <!-- Light Button -->
+        ${config.entities.light ? `
+          <button class="btn-icon" data-action="toggle" data-entity="${config.entities.light}" style="${isLightOn ? 'color: var(--warning-color); border-color: rgba(255, 215, 0, 0.3); background: rgba(255, 215, 0, 0.1);' : ''}" title="Luce Forno">
+            <ha-icon icon="${isLightOn ? 'mdi:lightbulb-on' : 'mdi:lightbulb-outline'}"></ha-icon>
+          </button>
+        ` : ''}
+
         ${!isRunning ? `
           <button class="btn-action start" data-action="press" data-entity="${config.entities.start_btn}">
             <div class="icon-wrap"><ha-icon icon="mdi:play"></ha-icon></div>
