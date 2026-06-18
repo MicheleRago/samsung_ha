@@ -189,7 +189,7 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
                 "Bake",
                 "Broil",
                 "ConvectionBroil",
-                "IntensiveCook",
+                "SlimStrong",
                 "BottomHeat",
                 "ConvectionRoast",
                 "ConvectionBake"

@@ -74,7 +74,7 @@ OVEN_MODE_MAP = {
     "Bake": "Ventola convenzionale",
     "Broil": "Grill Grande",
     "ConvectionBroil": "Grill ventilato",
-    "IntensiveCook": "Cottura intensiva",
+    "SlimStrong": "Cottura intensiva",
     "BottomHeat": "Rosolatura",
     "ConvectionRoast": "Riscaldamento superiore + convenzione",
     "ConvectionBake": "Riscaldamento inferiore + convenzione",
