@@ -69,20 +69,18 @@ SAMSUNG_WASHER_CYCLES = {
 }
 
 OVEN_MODE_MAP = {
-    "Bake": "Statico",
-    "ConvectionBake": "BottomHeatplusConvection",
-    "ConvectionRoast": "TopHeatplusConvection",
-    "Broil": "LargeGrill",
-    "LargeGrill": "LargeGrill",
-    "ConvectionBroil": "Grill Ventilato",
+    # The 8 modes requested by the user
+    "heating": "Convezione",
+    "Bake": "Ventola convenzionale",
+    "Broil": "Grill Grande",
+    "ConvectionBroil": "Grill ventilato",
+    "SlimStrong": "Cottura intensiva",
+    "BottomHeat": "Rosolatura",
+    "ConvectionRoast": "Riscaldamento superiore + convenzione",
+    "ConvectionBake": "Riscaldamento inferiore + convenzione",
+    
+    # Altre modalità per sicurezza
     "SteamCook": "Cottura a Vapore",
-    "SteamBake": "Cottura a Vapore",
-    "SteamRoast": "Arrosto a Vapore",
-    "SteamBottomHeatplusConvection": "Vapore + Calore Inf + Ventilato",
-    "Microwave": "Microonde",
-    "MWplusGrill": "Microonde + Grill",
-    "MWplusConvection": "Microonde + Ventilato",
-    "MWplusHotBlast": "Microonde + Hot Blast",
     "MWplusHotBlast2": "Microonde + Hot Blast 2",
     "SlimMiddle": "Slim Middle",
     "SlimStrong": "Slim Strong",

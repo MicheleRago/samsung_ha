@@ -182,6 +182,24 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         if not data:
             return []
         
+        # For ovenMode, strictly enforce the 8 requested modes to match the physical app
+        if self.entity_description.capability == "samsungce.ovenMode":
+            forced_modes = [
+                "heating",
+                "Bake",
+                "Broil",
+                "ConvectionBroil",
+                "SlimStrong",
+                "BottomHeat",
+                "ConvectionRoast",
+                "ConvectionBake"
+            ]
+            options = [self._translate_code(opt) for opt in forced_modes]
+            current = self.current_option
+            if current and current not in options:
+                options.append(current)
+            return options
+            
         supported = data.get(self.entity_description.capability, {}).get(self.entity_description.options_attribute, {}).get("value")
         
         # Fallback for old washer APIs
@@ -197,15 +215,6 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         if not options:
             if self.entity_description.capability == "samsungce.microwavePower":
                 options = ["100W", "300W", "450W", "600W", "700W", "800W", "850W", "900W"]
-            elif self.entity_description.capability == "samsungce.ovenMode":
-                fallback_modes = [
-                    "Bake", "ConvectionBake", "ConvectionRoast",
-                    "Broil", "LargeGrill", "ConvectionBroil", "SteamCook", "SteamBake", "SteamRoast",
-                    "SteamBottomHeatplusConvection", "Microwave", "MWplusGrill", "MWplusConvection",
-                    "MWplusHotBlast", "MWplusHotBlast2", "SlimMiddle", "SlimStrong",
-                    "heating", "grill", "warming", "defrosting", "NoOperation", "Auto"
-                ]
-                options = [self._translate_code(opt) for opt in fallback_modes]
 
         current = self.current_option
         if current and current not in options:
