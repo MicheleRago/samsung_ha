@@ -67,6 +67,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
             for description in NUMBER_TYPES:
                 if description.capability in status:
                     numbers.append(GenericNumber(coordinator, device_id, comp_name, name_prefix, description))
+                    
+            if "ovenOperatingState" in status:
+                numbers.append(VirtualCookTimeNumber(coordinator, device_id, comp_name, name_prefix))
 
     async_add_entities(numbers)
 
@@ -191,3 +194,45 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
         )
         await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
+
+class VirtualCookTimeNumber(CoordinatorEntity, NumberEntity):
+    """Virtual number entity for oven cook time."""
+    
+    def __init__(self, coordinator, device_id, component, device_name):
+        super().__init__(coordinator)
+        self._device_id = device_id
+        self._component = component
+        self._device_name = device_name
+        self._attr_unique_id = f"{device_id}_oven_cook_time"
+        self._attr_name = "Oven Cook Time"
+        self._attr_icon = "mdi:timer-outline"
+        self._attr_has_entity_name = True
+        self._attr_native_min_value = 1.0
+        self._attr_native_max_value = 600.0
+        self._attr_native_step = 1.0
+        self._attr_native_unit_of_measurement = "min"
+        
+    @property
+    def device_info(self):
+        """Return device info."""
+        return {
+            "identifiers": {(DOMAIN, self._device_id)},
+            "name": self._device_name.replace(f" ({self._component})", ""),
+            "manufacturer": "Samsung",
+        }
+
+    @property
+    def native_value(self):
+        """Return the state of the number."""
+        cache_key = f"{self._device_id}_pending_oven_state"
+        if cache_key in self.hass.data.get(DOMAIN, {}):
+            return self.hass.data[DOMAIN][cache_key].get("cook_time", 30.0)
+        return 30.0
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value in local cache."""
+        cache_key = f"{self._device_id}_pending_oven_state"
+        if cache_key not in self.hass.data[DOMAIN]:
+            self.hass.data[DOMAIN][cache_key] = {}
+        self.hass.data[DOMAIN][cache_key]["cook_time"] = value
+        self.async_write_ha_state()

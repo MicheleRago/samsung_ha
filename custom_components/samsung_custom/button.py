@@ -80,19 +80,22 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                 data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
                 mode = data.get("samsungce.ovenMode", {}).get("ovenMode", {}).get("value", "Bake")
                 temp = data.get("ovenSetpoint", {}).get("ovenSetpoint", {}).get("value", 200)
+                cook_time = 30.0
                 
                 # Check for locally cached user selections before the API fully updates
                 cache_key = f"{self._device_id}_pending_oven_state"
                 if cache_key in self.coordinator.hass.data[DOMAIN]:
                     mode = self.coordinator.hass.data[DOMAIN][cache_key].get("mode", mode)
                     temp = self.coordinator.hass.data[DOMAIN][cache_key].get("temp", temp)
+                    cook_time = self.coordinator.hass.data[DOMAIN][cache_key].get("cook_time", cook_time)
                     
                 # Ensure time and temp are strictly integers to avoid API Error 422 (integer expected)
                 api_temp = int(float(temp))
+                api_cook_time = int(float(cook_time) * 60)
                 
                 # Pass mode, cookTime in seconds (e.g. 1800 for 30 mins), and temperature
                 # Many Samsung ovens silently ignore the start command if cookTime is 0
-                args = [mode, 1800, api_temp]
+                args = [mode, api_cook_time, api_temp]
                 
             await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd, args)
         else:
