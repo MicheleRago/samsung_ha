@@ -22,6 +22,13 @@ BINARY_SENSOR_TYPES: tuple[SamsungBinarySensorEntityDescription, ...] = (
         attribute="contact",
         device_class=BinarySensorDeviceClass.DOOR,
     ),
+    SamsungBinarySensorEntityDescription(
+        key="oven_door",
+        name="Oven Door",
+        capability="samsungce.doorState",
+        attribute="doorState",
+        device_class=BinarySensorDeviceClass.DOOR,
+    ),
 )
 
 

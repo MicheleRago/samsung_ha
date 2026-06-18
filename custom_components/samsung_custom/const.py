@@ -25,6 +25,14 @@ CAP_OVEN_OPERATING_STATE = "samsungce.ovenOperatingState"
 CAP_TEMPERATURE_MEASUREMENT = "temperatureMeasurement"
 CAP_THERMOSTAT_COOLING = "thermostatCoolingSetpoint"
 
+# Oven specific capabilities
+CAP_OVEN_MODE = "samsungce.ovenMode"
+CAP_OVEN_SETPOINT = "ovenSetpoint"
+CAP_MICROWAVE_POWER = "samsungce.microwavePower"
+CAP_OVEN_DOOR = "samsungce.doorState"
+CAP_OVEN_LAMP = "samsungce.lamp"
+CAP_KIDS_LOCK = "samsungce.kidsLock"
+
 SAMSUNG_WASHER_CYCLES = {
     "01": "Cotton",
     "02": "Synthetics",

@@ -34,6 +34,19 @@ NUMBER_TYPES: tuple[SamsungNumberEntityDescription, ...] = (
         native_max_value=10.0,
         native_step=1.0,
     ),
+    SamsungNumberEntityDescription(
+        key="oven_setpoint",
+        name="Oven Target Temperature",
+        icon="mdi:thermometer",
+        capability="ovenSetpoint",
+        attribute="ovenSetpoint",
+        command="setOvenSetpoint",
+        device_class=NumberDeviceClass.TEMPERATURE,
+        native_unit_of_measurement="°C",
+        native_min_value=40.0,
+        native_max_value=250.0,
+        native_step=5.0,
+    ),
 )
 
 

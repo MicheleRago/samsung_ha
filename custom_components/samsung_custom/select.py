@@ -54,6 +54,24 @@ SELECT_TYPES: tuple[SamsungSelectEntityDescription, ...] = (
         command="setFreezerConvertMode",
         is_course=False,
     ),
+    SamsungSelectEntityDescription(
+        key="oven_mode",
+        name="Oven Mode",
+        capability="samsungce.ovenMode",
+        attribute="ovenMode",
+        options_attribute="supportedOvenModes",
+        command="setOvenMode",
+        is_course=False,
+    ),
+    SamsungSelectEntityDescription(
+        key="microwave_power",
+        name="Microwave Power",
+        capability="samsungce.microwavePower",
+        attribute="powerLevel",
+        options_attribute="supportedPowerLevels",
+        command="setPowerLevel",
+        is_course=False,
+    ),
 )
 
 
