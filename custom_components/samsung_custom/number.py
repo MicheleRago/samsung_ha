@@ -163,7 +163,8 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
                 cached_temp = self.coordinator.hass.data[DOMAIN][cache_key].get("temp")
                 if cached_temp is not None:
                     machine_state = data.get("ovenOperatingState", {}).get("machineState", {}).get("value")
-                    if machine_state not in ["running", "paused"]:
+                    job_state = data.get("ovenOperatingState", {}).get("ovenJobState", {}).get("value")
+                    if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
                         return float(cached_temp)
 
         val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
@@ -190,7 +191,8 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
             # Check if oven is running. If not, don't send the API command yet.
             data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
             machine_state = data.get("ovenOperatingState", {}).get("machineState", {}).get("value")
-            if machine_state not in ["running", "paused"]:
+            job_state = data.get("ovenOperatingState", {}).get("ovenJobState", {}).get("value")
+            if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
                 # Just cache it and write state
                 self.async_write_ha_state()
                 return
