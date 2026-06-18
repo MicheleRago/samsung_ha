@@ -82,9 +82,10 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                 temp = data.get("ovenSetpoint", {}).get("ovenSetpoint", {}).get("value", 200)
                 
                 # Check for locally cached user selections before the API fully updates
-                if hasattr(self.coordinator, "pending_oven_state") and self._device_id in self.coordinator.pending_oven_state:
-                    mode = self.coordinator.pending_oven_state[self._device_id].get("mode", mode)
-                    temp = self.coordinator.pending_oven_state[self._device_id].get("temp", temp)
+                cache_key = f"{self._device_id}_pending_oven_state"
+                if cache_key in self.coordinator.hass.data[DOMAIN]:
+                    mode = self.coordinator.hass.data[DOMAIN][cache_key].get("mode", mode)
+                    temp = self.coordinator.hass.data[DOMAIN][cache_key].get("temp", temp)
                     
                 # Pass mode, cookTime in seconds (e.g. 0 for manual), and temperature
                 args = [mode, 0, temp]

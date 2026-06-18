@@ -202,11 +202,10 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         
         # Cache the selected mode for the start button
         if self.entity_description.capability == "samsungce.ovenMode":
-            if not hasattr(self.coordinator, "pending_oven_state"):
-                self.coordinator.pending_oven_state = {}
-            if self._device_id not in self.coordinator.pending_oven_state:
-                self.coordinator.pending_oven_state[self._device_id] = {}
-            self.coordinator.pending_oven_state[self._device_id]["mode"] = code
+            cache_key = f"{self._device_id}_pending_oven_state"
+            if cache_key not in self.hass.data[DOMAIN]:
+                self.hass.data[DOMAIN][cache_key] = {}
+            self.hass.data[DOMAIN][cache_key]["mode"] = code
             
         await self.coordinator.api.execute_command(
             self._device_id, 
