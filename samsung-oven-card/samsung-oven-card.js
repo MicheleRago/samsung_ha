@@ -125,9 +125,21 @@ class SamsungOvenCard extends HTMLElement {
         .controls button:hover {
           background: var(--secondary-background-color);
         }
-        .controls span {
+        .controls input {
           font-weight: bold;
           font-size: 16px;
+          background: transparent;
+          border: none;
+          color: var(--primary-text-color);
+          text-align: center;
+          width: 50px;
+          outline: none;
+          -moz-appearance: textfield;
+        }
+        .controls input::-webkit-outer-spin-button,
+        .controls input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
         }
         .select-wrapper {
           margin-top: 12px;
@@ -232,6 +244,12 @@ class SamsungOvenCard extends HTMLElement {
         if (e.target.tagName === 'SELECT') {
           const entity = e.target.getAttribute('data-entity');
           hass.callService('select', 'select_option', { entity_id: entity, option: e.target.value });
+        } else if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+          const entity = e.target.getAttribute('data-entity');
+          const value = parseFloat(e.target.value);
+          if (!isNaN(value) && entity) {
+            hass.callService('number', 'set_value', { entity_id: entity, value: value });
+          }
         }
       });
     }
@@ -272,7 +290,10 @@ class SamsungOvenCard extends HTMLElement {
           </div>
           <div class="controls">
             <button data-action="num_down" data-entity="${config.entities.target_temp}"><ha-icon icon="mdi:minus"></ha-icon></button>
-            <span>${targetTemp ? targetTemp.state : '--'} °C</span>
+            <div style="display: flex; align-items: center;">
+              <input type="number" data-entity="${config.entities.target_temp}" value="${targetTemp ? targetTemp.state : ''}">
+              <span style="font-size: 14px; margin-left: 2px;">°C</span>
+            </div>
             <button data-action="num_up" data-entity="${config.entities.target_temp}"><ha-icon icon="mdi:plus"></ha-icon></button>
           </div>
         </div>
@@ -285,7 +306,10 @@ class SamsungOvenCard extends HTMLElement {
           </div>
           <div class="controls">
             <button data-action="num_down" data-entity="${config.entities.cook_time}"><ha-icon icon="mdi:minus"></ha-icon></button>
-            <span>${cookTime ? cookTime.state : '--'} min</span>
+            <div style="display: flex; align-items: center;">
+              <input type="number" data-entity="${config.entities.cook_time}" value="${cookTime ? cookTime.state : ''}">
+              <span style="font-size: 14px; margin-left: 2px;">min</span>
+            </div>
             <button data-action="num_up" data-entity="${config.entities.cook_time}"><ha-icon icon="mdi:plus"></ha-icon></button>
           </div>
         </div>
