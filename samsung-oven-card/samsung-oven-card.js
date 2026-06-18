@@ -290,7 +290,8 @@ class SamsungOvenCard extends HTMLElement {
     const light = hass.states[config.entities.light];
     const remote = hass.states[config.entities.remote_control];
     
-    const isRunning = ovenState && ['running', 'cooking', 'preheating', 'In Cottura', 'Preriscaldamento'].includes(ovenState.state);
+    const isRunning = ovenState && !['ready', 'Pronto', 'unknown', 'unavailable', 'idle', 'Standby', 'finished', 'Finito'].includes(ovenState.state);
+    const isPaused = ovenState && ['paused', 'In Pausa'].includes(ovenState.state);
     const isRemoteEnabled = remote && remote.state === 'on';
     const isLightOn = light && light.state === 'on';
 
@@ -406,10 +407,17 @@ class SamsungOvenCard extends HTMLElement {
             <span>Avvia</span>
           </button>
         ` : `
-          <button class="btn-action pause" data-action="press" data-entity="${config.entities.pause_btn}">
-            <div class="icon-wrap"><ha-icon icon="mdi:pause"></ha-icon></div>
-            <span>Pausa</span>
-          </button>
+          ${isPaused ? `
+            <button class="btn-action start" data-action="press" data-entity="${config.entities.start_btn}">
+              <div class="icon-wrap"><ha-icon icon="mdi:play"></ha-icon></div>
+              <span>Riprendi</span>
+            </button>
+          ` : `
+            <button class="btn-action pause" data-action="press" data-entity="${config.entities.pause_btn}">
+              <div class="icon-wrap"><ha-icon icon="mdi:pause"></ha-icon></div>
+              <span>Pausa</span>
+            </button>
+          `}
           <button class="btn-action stop" data-action="press" data-entity="${config.entities.stop_btn}">
             <div class="icon-wrap"><ha-icon icon="mdi:stop"></ha-icon></div>
             <span>Ferma</span>
