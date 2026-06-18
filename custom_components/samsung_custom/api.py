@@ -108,7 +108,7 @@ class SmartThingsApi:
         ]
         
         import json
-        _LOGGER.debug(f"DEBUG PAYLOAD: {json.dumps(payload)}")
+        _LOGGER.error(f"DEBUG PAYLOAD: {json.dumps(payload)}")
         
         await self._request("POST", url, json=payload)
         _LOGGER.debug(f"Command executed successfully: {component}.{capability}.{command}({arguments})")
