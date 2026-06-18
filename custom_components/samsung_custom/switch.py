@@ -210,8 +210,15 @@ class GenericOptionSwitch(CoordinatorEntity, SwitchEntity):
         self._command_off = description.command_off if description.command_off else description.command_on
         self._on_value = description.on_value
         self._off_value = description.off_value
-        self._on_arg = description.on_arg if description.on_arg is not None else ([self._on_value] if self._on_value is not None else [])
-        self._off_arg = description.off_arg if description.off_arg is not None else ([self._off_value] if self._off_value is not None else [])
+        if description.on_arg is not None:
+            self._on_arg = description.on_arg if isinstance(description.on_arg, list) else [description.on_arg]
+        else:
+            self._on_arg = [self._on_value] if self._on_value is not None else []
+            
+        if description.off_arg is not None:
+            self._off_arg = description.off_arg if isinstance(description.off_arg, list) else [description.off_arg]
+        else:
+            self._off_arg = [self._off_value] if self._off_value is not None else []
         
         comp_prefix = f"_{component}" if component != "main" else ""
         self._attr_unique_id = f"{device_id}{comp_prefix}_{description.capability}_{description.attribute}"
