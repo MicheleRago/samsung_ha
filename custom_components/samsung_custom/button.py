@@ -70,9 +70,20 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
         """Handle the button press."""
         import asyncio
         if self._capability == CAP_OVEN_OPERATING_STATE:
-            # Oven uses commands directly, e.g. "start", "pause", "stop"
+            # For oven, use standard ovenOperatingState capability instead of custom samsungce
+            cap = "ovenOperatingState"
             cmd = "start" if self._command_arg == "run" else self._command_arg
-            await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, cmd, [])
+            
+            args = []
+            if cmd == "start":
+                # Get current mode and temp to send with start command
+                data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+                mode = data.get("samsungce.ovenMode", {}).get("ovenMode", {}).get("value", "Bake")
+                temp = data.get("ovenSetpoint", {}).get("ovenSetpoint", {}).get("value", 200)
+                # Pass mode, cookTime in seconds (e.g. 0 for manual), and temperature
+                args = [mode, 0, temp]
+                
+            await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd, args)
         else:
             await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, "setMachineState", [self._command_arg])
         await asyncio.sleep(2)
