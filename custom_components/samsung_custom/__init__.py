@@ -8,7 +8,7 @@ from .coordinator import SmartThingsCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor", "switch", "select", "button", "binary_sensor", "number"]
+PLATFORMS = ["sensor", "switch", "select", "button", "binary_sensor", "number", "light"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Samsung Custom Appliances from a config entry."""

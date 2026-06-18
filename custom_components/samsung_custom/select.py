@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, CAP_WASHING_COURSE, CAP_WASHER_COURSE, CAP_DRYER_COURSE, SAMSUNG_WASHER_CYCLES
+from .const import DOMAIN, CAP_WASHING_COURSE, CAP_WASHER_COURSE, CAP_DRYER_COURSE, SAMSUNG_WASHER_CYCLES, OVEN_MODE_MAP
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -131,19 +131,28 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         if self.entity_description.capability in (CAP_WASHER_COURSE, CAP_DRYER_COURSE):
             return SAMSUNG_WASHER_CYCLES.get(code, f"Cycle {code}")
             
+        if self.entity_description.capability == "samsungce.ovenMode":
+            return OVEN_MODE_MAP.get(code, code)
+            
         return code
 
     def _reverse_translate(self, name):
         """Map name back to code if possible, otherwise return name."""
-        if not self.entity_description.is_course:
+        if not self.entity_description.is_course and self.entity_description.capability != "samsungce.ovenMode":
             return name
             
         if self.entity_description.capability in (CAP_WASHER_COURSE, CAP_DRYER_COURSE):
-            for code, translated_name in SAMSUNG_WASHER_CYCLES.items():
-                if translated_name == name:
-                    return code
+            for k, v in SAMSUNG_WASHER_CYCLES.items():
+                if v == name:
+                    return k
             if name.startswith("Cycle "):
                 return name.replace("Cycle ", "")
+        
+        if self.entity_description.capability == "samsungce.ovenMode":
+            for k, v in OVEN_MODE_MAP.items():
+                if v == name:
+                    return k
+                    
         return name
 
     @property
@@ -178,7 +187,7 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
             if self.entity_description.capability == "samsungce.microwavePower":
                 options = ["100W", "300W", "450W", "600W", "700W", "800W", "850W", "900W"]
             elif self.entity_description.capability == "samsungce.ovenMode":
-                options = ["NoOperation", "Convection", "Conventional", "Grill", "Auto", "Bottom", "TopBottom"]
+                options = [self._translate_code(opt) for opt in ["NoOperation", "ConvectionBake", "Conventional", "Broil", "Auto", "BottomHeat"]]
 
         current = self.current_option
         if current and current not in options:

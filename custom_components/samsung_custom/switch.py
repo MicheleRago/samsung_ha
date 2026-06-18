@@ -101,18 +101,7 @@ SWITCH_TYPES: tuple[SamsungSwitchEntityDescription, ...] = (
         on_arg="on",
         off_arg="off",
     ),
-    SamsungSwitchEntityDescription(
-        key="oven_lamp",
-        name="Oven Light",
-        icon="mdi:lightbulb",
-        capability="samsungce.lamp",
-        attribute="brightnessLevel",
-        command_on="setBrightnessLevel",
-        on_value="high",
-        off_value="off",
-        on_arg="high",
-        off_arg="off",
-    ),
+
     SamsungSwitchEntityDescription(
         key="kids_lock",
         name="Child Lock",

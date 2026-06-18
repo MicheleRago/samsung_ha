@@ -68,3 +68,50 @@ SAMSUNG_WASHER_CYCLES = {
     "A3": "Sanitization",
 }
 
+OVEN_MODE_MAP = {
+    "Conventional": "Statico",
+    "Bake": "Cottura",
+    "BottomHeat": "Calore Inferiore",
+    "ConvectionBake": "Ventilato",
+    "ConvectionRoast": "Arrosto Ventilato",
+    "Broil": "Grill",
+    "ConvectionBroil": "Grill Ventilato",
+    "SteamCook": "Cottura a Vapore",
+    "SteamBake": "Cottura a Vapore",
+    "SteamRoast": "Arrosto a Vapore",
+    "SteamBottomHeatplusConvection": "Vapore + Calore Inf + Ventilato",
+    "Microwave": "Microonde",
+    "MWplusGrill": "Microonde + Grill",
+    "MWplusConvection": "Microonde + Ventilato",
+    "MWplusHotBlast": "Microonde + Hot Blast",
+    "MWplusHotBlast2": "Microonde + Hot Blast 2",
+    "SlimMiddle": "Slim Middle",
+    "SlimStrong": "Slim Strong",
+    "SlowCook": "Cottura Lenta",
+    "Proof": "Lievitazione",
+    "Dehydrate": "Disidratazione",
+    "Others": "Altro",
+    "StrongSteam": "Vapore Forte",
+    "Descale": "Decalcificazione",
+    "Rinse": "Risciacquo"
+}
+
+OVEN_JOB_STATE_MAP = {
+    "scheduledStart": "Avvio Programmato",
+    "fastPreheat": "Preriscaldamento Rapido",
+    "scheduledEnd": "Fine Programmata",
+    "stone_heating": "Riscaldamento Pietra",
+    "timeHoldPreheat": "Preriscaldamento in Attesa",
+}
+
+DISHWASHER_JOB_STATE_MAP = {
+    "air_wash": "Lavaggio ad Aria",
+    "cooling": "Raffreddamento",
+    "drying": "Asciugatura",
+    "finish": "Finito",
+    "pre_wash": "Prelavaggio",
+    "rinse": "Risciacquo",
+    "spin": "Centrifuga",
+    "wash": "Lavaggio",
+    "wrinkle_prevent": "Antipiega"
+}

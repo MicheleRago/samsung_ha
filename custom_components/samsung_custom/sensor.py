@@ -8,7 +8,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import (
     DOMAIN, CAP_OPERATING_STATE, CAP_DISHWASHER_OPERATION, CAP_REMOTE_CONTROL,
     CAP_WASHER_OPERATING_STATE, CAP_DRYER_OPERATING_STATE, CAP_OVEN_OPERATING_STATE,
-    CAP_TEMPERATURE_MEASUREMENT
+    CAP_TEMPERATURE_MEASUREMENT, OVEN_MODE_MAP, OVEN_JOB_STATE_MAP, DISHWASHER_JOB_STATE_MAP
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,6 +55,29 @@ SENSOR_TYPES: tuple[SamsungSensorEntityDescription, ...] = (
         icon="mdi:stove",
         capability=CAP_OVEN_OPERATING_STATE,
         attribute="machineState",
+    ),
+    SamsungSensorEntityDescription(
+        key="oven_job_state",
+        name="Oven Job State",
+        icon="mdi:state-machine",
+        capability=CAP_OVEN_OPERATING_STATE,
+        attribute="ovenJobState",
+    ),
+    SamsungSensorEntityDescription(
+        key="oven_completion_time",
+        name="Oven Completion Time",
+        icon="mdi:clock",
+        capability=CAP_OVEN_OPERATING_STATE,
+        attribute="completionTime",
+        device_class="timestamp",
+    ),
+    SamsungSensorEntityDescription(
+        key="dishwasher_completion_time",
+        name="Dishwasher Completion Time",
+        icon="mdi:clock",
+        capability=CAP_OPERATING_STATE,
+        attribute="completionTime",
+        device_class="timestamp",
     ),
     SamsungSensorEntityDescription(
         key="remaining_time",
@@ -146,5 +169,13 @@ class GenericStateSensor(CoordinatorEntity, SensorEntity):
         
         if isinstance(val, dict) and "value" in val:
             val = val.get("value")
+            
+        # Translate based on attribute
+        if self.entity_description.attribute == "ovenJobState" and val in OVEN_JOB_STATE_MAP:
+            return OVEN_JOB_STATE_MAP[val]
+        if self.entity_description.attribute == "dishwasherJobState" and val in DISHWASHER_JOB_STATE_MAP:
+            return DISHWASHER_JOB_STATE_MAP[val]
+        if self.entity_description.attribute == "ovenMode" and val in OVEN_MODE_MAP:
+            return OVEN_MODE_MAP[val]
             
         return val
