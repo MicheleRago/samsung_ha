@@ -1,5 +1,8 @@
 import logging
-from homeassistant.components.sensor import SensorEntity
+from dataclasses import dataclass
+from typing import Optional
+
+from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
@@ -9,6 +12,75 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+@dataclass(kw_only=True)
+class SamsungSensorEntityDescription(SensorEntityDescription):
+    """Class describing Samsung sensor entities."""
+    capability: str
+    attribute: str
+
+
+SENSOR_TYPES: tuple[SamsungSensorEntityDescription, ...] = (
+    SamsungSensorEntityDescription(
+        key="machine_state",
+        name="Machine State",
+        icon="mdi:washing-machine",
+        capability=CAP_OPERATING_STATE,
+        attribute="machineState",
+    ),
+    SamsungSensorEntityDescription(
+        key="dishwasher_job_state",
+        name="Job State",
+        icon="mdi:state-machine",
+        capability=CAP_OPERATING_STATE,
+        attribute="dishwasherJobState",
+    ),
+    SamsungSensorEntityDescription(
+        key="washer_state",
+        name="Washer State",
+        icon="mdi:washing-machine",
+        capability=CAP_WASHER_OPERATING_STATE,
+        attribute="machineState",
+    ),
+    SamsungSensorEntityDescription(
+        key="dryer_state",
+        name="Dryer State",
+        icon="mdi:tumble-dryer",
+        capability=CAP_DRYER_OPERATING_STATE,
+        attribute="machineState",
+    ),
+    SamsungSensorEntityDescription(
+        key="oven_state",
+        name="Oven State",
+        icon="mdi:stove",
+        capability=CAP_OVEN_OPERATING_STATE,
+        attribute="machineState",
+    ),
+    SamsungSensorEntityDescription(
+        key="remaining_time",
+        name="Remaining Time",
+        icon="mdi:timer-outline",
+        capability=CAP_DISHWASHER_OPERATION,
+        attribute="remainingTimeStr",
+    ),
+    SamsungSensorEntityDescription(
+        key="remote_control",
+        name="Remote Control",
+        icon="mdi:remote",
+        capability=CAP_REMOTE_CONTROL,
+        attribute="remoteControlEnabled",
+    ),
+    SamsungSensorEntityDescription(
+        key="temperature",
+        name="Temperature",
+        icon="mdi:thermometer",
+        capability=CAP_TEMPERATURE_MEASUREMENT,
+        attribute="temperature",
+        device_class="temperature",
+        native_unit_of_measurement="°C",
+    ),
+)
+
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the sensor platform."""
@@ -22,56 +94,36 @@ async def async_setup_entry(hass, entry, async_add_entities):
         device_name = device_info.get("name", "Samsung Appliance")
         
         for comp_name, status in components.items():
-            name = f"{device_name} ({comp_name})" if comp_name != "main" else device_name
-
-            if CAP_OPERATING_STATE in status:
-                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_OPERATING_STATE, "machineState", "Machine State", "mdi:washing-machine"))
-                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_OPERATING_STATE, "dishwasherJobState", "Job State", "mdi:state-machine"))
+            name_prefix = f"{device_name} ({comp_name})" if comp_name != "main" else device_name
             
-            if CAP_WASHER_OPERATING_STATE in status:
-                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_WASHER_OPERATING_STATE, "machineState", "Washer State", "mdi:washing-machine"))
-                
-            if CAP_DRYER_OPERATING_STATE in status:
-                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_DRYER_OPERATING_STATE, "machineState", "Dryer State", "mdi:tumble-dryer"))
-                
-            if CAP_OVEN_OPERATING_STATE in status:
-                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_OVEN_OPERATING_STATE, "machineState", "Oven State", "mdi:stove"))
-                
-            if CAP_DISHWASHER_OPERATION in status:
-                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_DISHWASHER_OPERATION, "remainingTimeStr", "Remaining Time", "mdi:timer-outline"))
-                
-            if CAP_REMOTE_CONTROL in status:
-                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_REMOTE_CONTROL, "remoteControlEnabled", "Remote Control", "mdi:remote"))
-                
-            if CAP_TEMPERATURE_MEASUREMENT in status:
-                sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name, CAP_TEMPERATURE_MEASUREMENT, "temperature", "Temperature", "mdi:thermometer", "temperature", "°C"))
+            for description in SENSOR_TYPES:
+                if description.capability in status:
+                    sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name_prefix, description))
 
     async_add_entities(sensors)
 
+
 class GenericStateSensor(CoordinatorEntity, SensorEntity):
     """Generic sensor for device state."""
+    entity_description: SamsungSensorEntityDescription
 
-    def __init__(self, coordinator, device_id, component, device_name, capability, attribute, name, icon, device_class=None, unit_of_measurement=None):
+    def __init__(self, coordinator, device_id, component, device_name, description: SamsungSensorEntityDescription):
         """Initialize the sensor."""
         super().__init__(coordinator)
+        self.entity_description = description
         self._device_id = device_id
         self._component = component
         self._device_name = device_name
-        self._capability = capability
-        self._attribute = attribute
         
         comp_prefix = f"_{component}" if component != "main" else ""
-        self._attr_unique_id = f"{device_id}{comp_prefix}_{capability}_{attribute}"
+        self._attr_unique_id = f"{device_id}{comp_prefix}_{description.capability}_{description.attribute}"
         
         # Add a prefix to the name based on the component if not main
         if component != "main":
-            self._attr_name = f"{component.capitalize()} {name}"
+            self._attr_name = f"{component.capitalize()} {description.name}"
         else:
-            self._attr_name = name
+            self._attr_name = description.name
             
-        self._attr_icon = icon
-        self._attr_device_class = device_class
-        self._attr_native_unit_of_measurement = unit_of_measurement
         self._attr_has_entity_name = True
 
     @property
@@ -89,6 +141,10 @@ class GenericStateSensor(CoordinatorEntity, SensorEntity):
         data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
         if not data:
             return None
-        return data.get(self._capability, {}).get(self._attribute, {}).get("value")
-
-
+            
+        val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
+        
+        if isinstance(val, dict) and "value" in val:
+            val = val.get("value")
+            
+        return val
