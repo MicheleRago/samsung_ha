@@ -69,7 +69,12 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Handle the button press."""
         import asyncio
-        await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, "setMachineState", [self._command_arg])
+        if self._capability == CAP_OVEN_OPERATING_STATE:
+            # Oven uses commands directly, e.g. "start", "pause", "stop"
+            cmd = "start" if self._command_arg == "run" else self._command_arg
+            await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, cmd, [])
+        else:
+            await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, "setMachineState", [self._command_arg])
         await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
 
