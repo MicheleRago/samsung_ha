@@ -308,7 +308,7 @@ class SamsungOvenCard extends HTMLElement {
           <div class="select-wrapper">
             <select data-entity="${config.entities.oven_mode}">
               ${ovenMode.attributes.options.map(opt => {
-                return \`<option value="\${opt}" \${opt === ovenMode.state ? 'selected' : ''}>\${opt}</option>\`;
+                return `<option value="${opt}" ${opt === ovenMode.state ? 'selected' : ''}>${opt}</option>`;
               }).join('')}
             </select>
           </div>
