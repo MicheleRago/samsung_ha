@@ -273,25 +273,16 @@ class SamsungOvenCard extends HTMLElement {
       stateText += ` • ${currentTemp.state}°C`;
     }
 
-    // JS-side translation mapping to guarantee 8 elements
+    // JS-side translation mapping to guarantee 8 elements (eng : ita)
     const UIModeMap = {
       "heating": "Convezione",
       "Bake": "Ventola convenzionale",
-      "Cottura": "Ventola convenzionale",
-      "Statico": "Ventola convenzionale",
       "Broil": "Grill Grande",
-      "LargeGrill": "Grill Grande",
-      "Grill Largo": "Grill Grande",
       "ConvectionBroil": "Grill ventilato",
-      "Grill Ventilato": "Grill ventilato",
       "SlimStrong": "Cottura intensiva",
       "BottomHeat": "Rosolatura",
       "ConvectionRoast": "Riscaldamento superiore + convenzione",
-      "TopHeatplusConvection": "Riscaldamento superiore + convenzione",
-      "Ventilato Superiore": "Riscaldamento superiore + convenzione",
-      "ConvectionBake": "Riscaldamento inferiore + convenzione",
-      "BottomHeatplusConvection": "Riscaldamento inferiore + convenzione",
-      "Ventilato Inferiore": "Riscaldamento inferiore + convenzione"
+      "ConvectionBake": "Riscaldamento inferiore + convenzione"
     };
 
     // The 8 allowed visual labels
