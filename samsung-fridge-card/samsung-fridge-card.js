@@ -38,10 +38,12 @@ class SamsungFridgeCard extends HTMLElement {
           font-size: 22px;
           font-weight: 600;
         }
-        .hero-subtitle {
-          font-size: 14px;
-          color: var(--secondary-text-color);
-          margin-top: 4px;
+        .hero.offline img {
+          filter: grayscale(100%) opacity(0.5);
+        }
+        .hero.offline ha-icon {
+          color: var(--disabled-text-color, #9e9e9e);
+          opacity: 0.5;
         }
         .grid {
           display: grid;
@@ -223,11 +225,12 @@ class SamsungFridgeCard extends HTMLElement {
       heroMedia = `<ha-icon icon="${icon}"></ha-icon>`;
     }
 
+    const isOffline = tempFridge && (tempFridge.state === 'unavailable' || tempFridge.state === 'unknown');
+
     this.content.innerHTML = `
-      <div class="hero">
+      <div class="hero ${isOffline ? 'offline' : ''}">
         ${heroMedia}
         <div class="hero-title">${config.name || 'Samsung Refrigerator'}</div>
-        <div class="hero-subtitle">Online</div>
       </div>
       
       <div class="grid">
@@ -261,7 +264,7 @@ class SamsungFridgeCard extends HTMLElement {
         <div class="tile switch ${coolSwitch && coolSwitch.state === 'on' ? 'active' : ''}" data-action="toggle" data-entity="${config.entities.power_cool}">
           <div class="tile-header" style="margin: 0;">
             <div class="tile-icon"><ha-icon icon="mdi:snowflake-alert"></ha-icon></div>
-            <div class="tile-title">Power Cool</div>
+            <div class="tile-title">Fresco Rapido</div>
           </div>
         </div>
 
@@ -269,7 +272,7 @@ class SamsungFridgeCard extends HTMLElement {
         <div class="tile switch ${freezeSwitch && freezeSwitch.state === 'on' ? 'active' : ''}" data-action="toggle" data-entity="${config.entities.power_freeze}">
           <div class="tile-header" style="margin: 0;">
             <div class="tile-icon"><ha-icon icon="mdi:snowflake-melt"></ha-icon></div>
-            <div class="tile-title">Power Freeze</div>
+            <div class="tile-title">Congelamento Rapido</div>
           </div>
         </div>
       </div>
