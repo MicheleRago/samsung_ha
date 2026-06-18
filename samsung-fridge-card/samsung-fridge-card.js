@@ -164,7 +164,7 @@ class SamsungFridgeCard extends HTMLElement {
           50% { opacity: 0.5; }
           100% { opacity: 1; }
         }
-      \`;
+      `;
       
       this.card.appendChild(style);
       this.card.appendChild(this.content);
@@ -218,15 +218,15 @@ class SamsungFridgeCard extends HTMLElement {
 
     let heroMedia = '';
     if (image) {
-      heroMedia = \`<img src="\${image}" alt="Refrigerator" />\`;
+      heroMedia = `<img src="${image}" alt="Refrigerator" />`;
     } else {
-      heroMedia = \`<ha-icon icon="\${icon}"></ha-icon>\`;
+      heroMedia = `<ha-icon icon="${icon}"></ha-icon>`;
     }
 
-    this.content.innerHTML = \`
+    this.content.innerHTML = `
       <div class="hero">
-        \${heroMedia}
-        <div class="hero-title">\${config.name || 'Samsung Refrigerator'}</div>
+        ${heroMedia}
+        <div class="hero-title">${config.name || 'Samsung Refrigerator'}</div>
         <div class="hero-subtitle">Online</div>
       </div>
       
