@@ -273,6 +273,51 @@ class SamsungOvenCard extends HTMLElement {
       stateText += ` • ${currentTemp.state}°C`;
     }
 
+    // JS-side translation mapping to guarantee 8 elements
+    const UIModeMap = {
+      "heating": "Convezione",
+      "Bake": "Ventola convenzionale",
+      "Cottura": "Ventola convenzionale",
+      "Statico": "Ventola convenzionale",
+      "Broil": "Grill Grande",
+      "LargeGrill": "Grill Grande",
+      "Grill Largo": "Grill Grande",
+      "ConvectionBroil": "Grill ventilato",
+      "Grill Ventilato": "Grill ventilato",
+      "SlimStrong": "Cottura intensiva",
+      "BottomHeat": "Rosolatura",
+      "ConvectionRoast": "Riscaldamento superiore + convenzione",
+      "TopHeatplusConvection": "Riscaldamento superiore + convenzione",
+      "Ventilato Superiore": "Riscaldamento superiore + convenzione",
+      "ConvectionBake": "Riscaldamento inferiore + convenzione",
+      "BottomHeatplusConvection": "Riscaldamento inferiore + convenzione",
+      "Ventilato Inferiore": "Riscaldamento inferiore + convenzione"
+    };
+
+    // The 8 allowed visual labels
+    const allowedLabels = [
+      "Convezione", "Ventola convenzionale", "Grill Grande", "Grill ventilato", 
+      "Cottura intensiva", "Rosolatura", "Riscaldamento superiore + convenzione", 
+      "Riscaldamento inferiore + convenzione"
+    ];
+
+    let selectHtml = '';
+    if (ovenMode && ovenMode.attributes && ovenMode.attributes.options) {
+      // Create a unique set of options based on the mapped labels
+      const processedLabels = new Set();
+      
+      ovenMode.attributes.options.forEach(opt => {
+        let label = UIModeMap[opt] || opt;
+        
+        // If it's one of our 8 allowed labels and we haven't added it yet
+        if (allowedLabels.includes(label) && !processedLabels.has(label)) {
+          processedLabels.add(label);
+          const isSelected = (UIModeMap[ovenMode.state] || ovenMode.state) === label;
+          selectHtml += `<option value="${opt}" ${isSelected ? 'selected' : ''}>${label}</option>`;
+        }
+      });
+    }
+
     this.content.innerHTML = `
       <div class="hero ${isRunning ? 'running' : ''}">
         <ha-icon class="remote-icon ${!isRemoteEnabled ? 'disabled' : ''}" icon="${isRemoteEnabled ? 'mdi:remote' : 'mdi:remote-off'}" title="Smart Control"></ha-icon>
@@ -332,9 +377,7 @@ class SamsungOvenCard extends HTMLElement {
           </div>
           <div class="select-wrapper">
             <select data-entity="${config.entities.oven_mode}">
-              ${ovenMode.attributes.options.map(opt => {
-                return `<option value="${opt}" ${opt === ovenMode.state ? 'selected' : ''}>${opt}</option>`;
-              }).join('')}
+              ${selectHtml}
             </select>
           </div>
         </div>
