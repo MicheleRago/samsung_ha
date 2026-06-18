@@ -199,6 +199,15 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         """Change the selected option."""
         import asyncio
         code = self._reverse_translate(option)
+        
+        # Cache the selected mode for the start button
+        if self.entity_description.capability == "samsungce.ovenMode":
+            if not hasattr(self.coordinator, "pending_oven_state"):
+                self.coordinator.pending_oven_state = {}
+            if self._device_id not in self.coordinator.pending_oven_state:
+                self.coordinator.pending_oven_state[self._device_id] = {}
+            self.coordinator.pending_oven_state[self._device_id]["mode"] = code
+            
         await self.coordinator.api.execute_command(
             self._device_id, 
             self._component, 

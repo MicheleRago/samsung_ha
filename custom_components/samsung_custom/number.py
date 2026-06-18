@@ -166,6 +166,15 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         import asyncio
+        
+        # Cache the selected temp for the start button
+        if self.entity_description.capability == "ovenSetpoint":
+            if not hasattr(self.coordinator, "pending_oven_state"):
+                self.coordinator.pending_oven_state = {}
+            if self._device_id not in self.coordinator.pending_oven_state:
+                self.coordinator.pending_oven_state[self._device_id] = {}
+            self.coordinator.pending_oven_state[self._device_id]["temp"] = value
+            
         await self.coordinator.api.execute_command(
             self._device_id, 
             self._component, 
