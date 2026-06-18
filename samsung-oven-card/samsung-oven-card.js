@@ -198,6 +198,22 @@ class SamsungOvenCard extends HTMLElement {
           color: white;
           box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
         }
+        .btn-action.stop {
+          background: rgba(244, 67, 54, 0.1);
+          color: #f44336;
+        }
+        .btn-action.light {
+          background: rgba(255, 255, 255, 0.1);
+          color: var(--primary-text-color);
+        }
+        .btn-action.light.active {
+          background: rgba(255, 215, 0, 0.15);
+          color: #FFD700;
+        }
+        .btn-action.light.active .icon-wrap {
+          background: rgba(255, 215, 0, 0.2);
+          color: #FFD700;
+        }
         .btn-action.pause .icon-wrap {
           background: var(--warning-color, #ff9800);
           color: white;
@@ -370,8 +386,9 @@ class SamsungOvenCard extends HTMLElement {
       <div class="actions">
         <!-- Light Button -->
         ${config.entities.light ? `
-          <button class="btn-icon" data-action="toggle" data-entity="${config.entities.light}" style="${isLightOn ? 'color: var(--warning-color); border-color: rgba(255, 215, 0, 0.3); background: rgba(255, 215, 0, 0.1);' : ''}" title="Luce Forno">
-            <ha-icon icon="${isLightOn ? 'mdi:lightbulb-on' : 'mdi:lightbulb-outline'}"></ha-icon>
+          <button class="btn-action light ${isLightOn ? 'active' : ''}" data-action="toggle" data-entity="${config.entities.light}">
+            <div class="icon-wrap"><ha-icon icon="${isLightOn ? 'mdi:lightbulb-on' : 'mdi:lightbulb-outline'}"></ha-icon></div>
+            <span>Luce</span>
           </button>
         ` : ''}
 
