@@ -1,3 +1,5 @@
+console.info("%c SAMSUNG FRIDGE CARD %c v1.0.0 is loaded! ", "color: white; background: #03a9f4; font-weight: 700;", "color: #03a9f4; background: white; font-weight: 700;");
+
 class SamsungFridgeCard extends HTMLElement {
   set hass(hass) {
     if (!this.content) {
@@ -25,6 +27,12 @@ class SamsungFridgeCard extends HTMLElement {
           height: auto;
           margin-bottom: 16px;
           filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.3));
+        }
+        .hero ha-icon {
+          --mdc-icon-size: 120px;
+          color: var(--primary-color, #03a9f4);
+          margin-bottom: 16px;
+          filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.2));
         }
         .hero-title {
           font-size: 22px;
@@ -156,7 +164,7 @@ class SamsungFridgeCard extends HTMLElement {
           50% { opacity: 0.5; }
           100% { opacity: 1; }
         }
-      `;
+      \`;
       
       this.card.appendChild(style);
       this.card.appendChild(this.content);
@@ -205,12 +213,20 @@ class SamsungFridgeCard extends HTMLElement {
     const doorFridge = hass.states[config.entities.door_fridge];
     const doorFreezer = hass.states[config.entities.door_freezer];
 
-    const image = config.image || 'https://images.samsung.com/is/image/samsung/p6pim/it/rb38a7b6bs9-ef/gallery/it-bespoke-refrigerator-rb38a7b6bs9-ef-531086053?$650_519_PNG$'; // Fallback image
+    const image = config.image;
+    const icon = config.icon || 'mdi:fridge';
 
-    this.content.innerHTML = `
+    let heroMedia = '';
+    if (image) {
+      heroMedia = \`<img src="\${image}" alt="Refrigerator" />\`;
+    } else {
+      heroMedia = \`<ha-icon icon="\${icon}"></ha-icon>\`;
+    }
+
+    this.content.innerHTML = \`
       <div class="hero">
-        <img src="${image}" alt="Refrigerator" />
-        <div class="hero-title">${config.name || 'Samsung Refrigerator'}</div>
+        \${heroMedia}
+        <div class="hero-title">\${config.name || 'Samsung Refrigerator'}</div>
         <div class="hero-subtitle">Online</div>
       </div>
       

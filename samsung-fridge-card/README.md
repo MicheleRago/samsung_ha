@@ -19,7 +19,7 @@ Aggiungi una card Manuale alla tua plancia e usa questa configurazione. Sostitui
 ```yaml
 type: custom:samsung-fridge-card
 name: Frigorifero Samsung
-image: /local/fridge.png
+icon: mdi:fridge # Puoi usare anche 'image: /local/fridge.png'
 entities:
   temp_fridge: number.frigo_fridge_target_temp
   temp_freezer: number.frigo_freezer_target_temp
