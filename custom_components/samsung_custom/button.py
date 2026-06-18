@@ -87,8 +87,11 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                     mode = self.coordinator.hass.data[DOMAIN][cache_key].get("mode", mode)
                     temp = self.coordinator.hass.data[DOMAIN][cache_key].get("temp", temp)
                     
+                # Ensure time and temp are strictly integers to avoid API Error 422 (integer expected)
+                api_temp = int(float(temp))
+                
                 # Pass mode, cookTime in seconds (e.g. 0 for manual), and temperature
-                args = [mode, 0, temp]
+                args = [mode, 0, api_temp]
                 
             await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd, args)
         else:
