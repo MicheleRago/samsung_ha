@@ -69,12 +69,11 @@ SAMSUNG_WASHER_CYCLES = {
 }
 
 OVEN_MODE_MAP = {
-    "Conventional": "Statico",
-    "Bake": "Cottura",
-    "BottomHeat": "Calore Inferiore",
-    "ConvectionBake": "Ventilato",
-    "ConvectionRoast": "Arrosto Ventilato",
-    "Broil": "Grill",
+    "Bake": "Statico",
+    "ConvectionBake": "BottomHeatplusConvection",
+    "ConvectionRoast": "TopHeatplusConvection",
+    "Broil": "LargeGrill",
+    "LargeGrill": "LargeGrill",
     "ConvectionBroil": "Grill Ventilato",
     "SteamCook": "Cottura a Vapore",
     "SteamBake": "Cottura a Vapore",
