@@ -178,4 +178,13 @@ class GenericStateSensor(CoordinatorEntity, SensorEntity):
         if self.entity_description.attribute == "ovenMode" and val in OVEN_MODE_MAP:
             return OVEN_MODE_MAP[val]
             
+        if self.entity_description.device_class == "timestamp" and val:
+            from homeassistant.util import dt as dt_util
+            try:
+                parsed = dt_util.parse_datetime(val)
+                if parsed is not None:
+                    return parsed
+            except Exception:
+                pass
+                
         return val
