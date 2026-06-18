@@ -198,7 +198,14 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
             if self.entity_description.capability == "samsungce.microwavePower":
                 options = ["100W", "300W", "450W", "600W", "700W", "800W", "850W", "900W"]
             elif self.entity_description.capability == "samsungce.ovenMode":
-                options = [self._translate_code(opt) for opt in ["NoOperation", "ConvectionBake", "Conventional", "Broil", "Auto", "BottomHeat"]]
+                fallback_modes = [
+                    "Conventional", "Bake", "BottomHeat", "ConvectionBake", "ConvectionRoast",
+                    "Broil", "ConvectionBroil", "SteamCook", "SteamBake", "SteamRoast",
+                    "SteamBottomHeatplusConvection", "Microwave", "MWplusGrill", "MWplusConvection",
+                    "MWplusHotBlast", "MWplusHotBlast2", "SlimMiddle", "SlimStrong",
+                    "heating", "grill", "warming", "defrosting", "NoOperation", "Auto"
+                ]
+                options = [self._translate_code(opt) for opt in fallback_modes]
 
         current = self.current_option
         if current and current not in options:
