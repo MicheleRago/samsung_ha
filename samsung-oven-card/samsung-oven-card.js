@@ -279,7 +279,7 @@ class SamsungOvenCard extends HTMLElement {
       "Bake": "Ventola convenzionale",
       "Broil": "Grill Grande",
       "ConvectionBroil": "Grill ventilato",
-      "SlimStrong": "Cottura intensiva",
+      "IntensiveCook": "Cottura intensiva",
       "BottomHeat": "Rosolatura",
       "ConvectionRoast": "Riscaldamento superiore + convenzione",
       "ConvectionBake": "Riscaldamento inferiore + convenzione"
