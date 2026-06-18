@@ -110,8 +110,8 @@ SWITCH_TYPES: tuple[SamsungSwitchEntityDescription, ...] = (
         command_on="setBrightnessLevel",
         on_value="high",
         off_value="off",
-        on_arg=100,
-        off_arg=0,
+        on_arg="high",
+        off_arg="off",
     ),
     SamsungSwitchEntityDescription(
         key="kids_lock",
