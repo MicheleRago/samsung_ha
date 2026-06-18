@@ -161,6 +161,16 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
         if not data:
             return None
+        # If it's ovenMode, check local cache first (if oven is off)
+        if self.entity_description.capability == "samsungce.ovenMode":
+            cache_key = f"{self._device_id}_pending_oven_state"
+            if cache_key in self.coordinator.hass.data.get(DOMAIN, {}):
+                cached_mode = self.coordinator.hass.data[DOMAIN][cache_key].get("mode")
+                if cached_mode is not None:
+                    machine_state = data.get("ovenOperatingState", {}).get("machineState", {}).get("value")
+                    if machine_state not in ["running", "paused"]:
+                        return self._translate_code(cached_mode)
+
         val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
         return self._translate_code(val)
 

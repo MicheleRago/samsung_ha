@@ -156,6 +156,16 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
         if not data:
             return None
         
+        # If it's ovenSetpoint, check local cache first (if oven is off)
+        if self.entity_description.capability == "ovenSetpoint":
+            cache_key = f"{self._device_id}_pending_oven_state"
+            if cache_key in self.coordinator.hass.data.get(DOMAIN, {}):
+                cached_temp = self.coordinator.hass.data[DOMAIN][cache_key].get("temp")
+                if cached_temp is not None:
+                    machine_state = data.get("ovenOperatingState", {}).get("machineState", {}).get("value")
+                    if machine_state not in ["running", "paused"]:
+                        return float(cached_temp)
+
         val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
         
         if val is None:
