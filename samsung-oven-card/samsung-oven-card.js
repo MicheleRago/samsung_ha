@@ -209,7 +209,8 @@ class SamsungOvenCard extends HTMLElement {
           const entity = action.getAttribute('data-entity');
           
           if (actionType === 'toggle' && entity) {
-            hass.callService('switch', 'toggle', { entity_id: entity });
+            const domain = entity.split('.')[0];
+            hass.callService(domain, 'toggle', { entity_id: entity });
           } else if (actionType === 'press' && entity) {
             hass.callService('button', 'press', { entity_id: entity });
           } else if (actionType === 'num_up' || actionType === 'num_down') {

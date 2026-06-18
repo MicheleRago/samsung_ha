@@ -29,7 +29,7 @@ entities:
   start_btn: button.forno_start
   pause_btn: button.forno_pause
   stop_btn: button.forno_stop
-  light: switch.forno_light
+  light: light.forno_light
   remote_control: sensor.forno_remote_control
 ```
 
