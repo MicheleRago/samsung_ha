@@ -95,6 +95,9 @@ class SmartThingsApi:
         """Execute a command on the device."""
         url = f"{BASE_URL}/devices/{device_id}/commands"
         
+        if arguments is not None and not isinstance(arguments, list):
+            arguments = [arguments]
+            
         payload = {
             "commands": [
                 {
