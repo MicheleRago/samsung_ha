@@ -89,19 +89,6 @@ SWITCH_TYPES: tuple[SamsungSwitchEntityDescription, ...] = (
         on_arg=[],
         off_arg=[],
     ),
-    SamsungSwitchEntityDescription(
-        key="vacation_mode",
-        name="Vacation Mode",
-        icon="mdi:palm-tree",
-        capability="samsungce.fridgeVacationMode",
-        attribute="vacationMode",
-        command_on="on",
-        command_off="off",
-        on_value="on",
-        off_value="off",
-        on_arg=[],
-        off_arg=[],
-    ),
 )
 
 
