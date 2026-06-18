@@ -71,6 +71,9 @@ class SmartThingsApi:
                         retry_response.raise_for_status()
                         return await retry_response.json()
                 
+                if response.status >= 400:
+                    text = await response.text()
+                    _LOGGER.error(f"API Error {response.status}: {text}")
                 response.raise_for_status()
                 if response.status == 204:
                     return None

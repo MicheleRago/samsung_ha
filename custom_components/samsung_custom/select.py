@@ -171,7 +171,20 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         if self.entity_description.is_course and isinstance(supported, list) and len(supported) > 0 and isinstance(supported[0], dict):
             return [self._translate_code(str(item.get("cycle"))) for item in supported if "cycle" in item]
         
-        return [self._translate_code(opt) for opt in (supported or [])]
+        options = [self._translate_code(opt) for opt in (supported or [])]
+        
+        # Fallbacks for empty supported arrays
+        if not options:
+            if self.entity_description.capability == "samsungce.microwavePower":
+                options = ["100W", "300W", "450W", "600W", "700W", "800W", "850W", "900W"]
+            elif self.entity_description.capability == "samsungce.ovenMode":
+                options = ["NoOperation", "Convection", "Conventional", "Grill", "Auto", "Bottom", "TopBottom"]
+
+        current = self.current_option
+        if current and current not in options:
+            options.append(current)
+            
+        return options
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
