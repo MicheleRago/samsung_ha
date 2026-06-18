@@ -90,8 +90,9 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                 # Ensure time and temp are strictly integers to avoid API Error 422 (integer expected)
                 api_temp = int(float(temp))
                 
-                # Pass mode, cookTime in seconds (e.g. 0 for manual), and temperature
-                args = [mode, 0, api_temp]
+                # Pass mode, cookTime in seconds (e.g. 1800 for 30 mins), and temperature
+                # Many Samsung ovens silently ignore the start command if cookTime is 0
+                args = [mode, 1800, api_temp]
                 
             await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd, args)
         else:
