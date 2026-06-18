@@ -207,6 +207,14 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
                 self.hass.data[DOMAIN][cache_key] = {}
             self.hass.data[DOMAIN][cache_key]["mode"] = code
             
+            # Check if oven is running. If not, don't send the API command yet.
+            data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+            machine_state = data.get("ovenOperatingState", {}).get("machineState", {}).get("value")
+            if machine_state not in ["running", "paused"]:
+                # Just cache it and write state
+                self.async_write_ha_state()
+                return
+            
         await self.coordinator.api.execute_command(
             self._device_id, 
             self._component, 
