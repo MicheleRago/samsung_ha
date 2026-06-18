@@ -283,9 +283,17 @@ class SamsungFridgeCard extends HTMLElement {
           </div>
           <div class="select-wrapper">
             <select data-entity="${config.entities.freezer_mode}">
-              ${modeSelect.attributes.options.map(opt => `
-                <option value="${opt}" ${opt === modeSelect.state ? 'selected' : ''}>${opt}</option>
-              `).join('')}
+              ${modeSelect.attributes.options.map(opt => {
+                const modeTranslations = {
+                  'freezer': 'Congelamento',
+                  'frezzer': 'Congelamento',
+                  'softFreezing': 'Congelamento leggero',
+                  'cold': 'Freddo',
+                  'cool': 'Fresco'
+                };
+                const label = modeTranslations[opt] || opt;
+                return `<option value="${opt}" ${opt === modeSelect.state ? 'selected' : ''}>${label}</option>`;
+              }).join('')}
             </select>
           </div>
         </div>
@@ -295,11 +303,11 @@ class SamsungFridgeCard extends HTMLElement {
       <div class="sensors">
         <div class="sensor ${doorFridge && doorFridge.state === 'on' ? 'alert' : ''}">
           <ha-icon class="sensor-icon" icon="${doorFridge && doorFridge.state === 'on' ? 'mdi:door-open' : 'mdi:door-closed'}"></ha-icon>
-          <div class="sensor-val">${doorFridge && doorFridge.state === 'on' ? 'Aperta' : 'Chiusa'}</div>
+          <div class="sensor-val">Frigo</div>
         </div>
         <div class="sensor ${doorFreezer && doorFreezer.state === 'on' ? 'alert' : ''}">
           <ha-icon class="sensor-icon" icon="${doorFreezer && doorFreezer.state === 'on' ? 'mdi:door-open' : 'mdi:door-closed'}"></ha-icon>
-          <div class="sensor-val">${doorFreezer && doorFreezer.state === 'on' ? 'Aperta' : 'Chiusa'}</div>
+          <div class="sensor-val">Freezer</div>
         </div>
       </div>
     `;
