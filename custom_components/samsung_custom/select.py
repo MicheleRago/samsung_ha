@@ -4,7 +4,17 @@ from dataclasses import dataclass
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, CAP_WASHING_COURSE, CAP_WASHER_COURSE, CAP_DRYER_COURSE, SAMSUNG_WASHER_CYCLES, OVEN_MODE_MAP
+from .const import (
+    DOMAIN,
+    CAP_WASHING_COURSE,
+    CAP_WASHER_COURSE,
+    CAP_DRYER_COURSE,
+    SAMSUNG_WASHER_CYCLES,
+    OVEN_MODE_MAP,
+    OVEN_SELECT_MODES,
+    get_oven_operating_state,
+    normalize_oven_mode_code,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -122,7 +132,13 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
 
     def _translate_code(self, code):
         """Map code to name if possible, otherwise return code."""
-        if not self.entity_description.is_course or not code:
+        if not code:
+            return code
+
+        if self.entity_description.capability == "samsungce.ovenMode":
+            return OVEN_MODE_MAP.get(code, code)
+
+        if not self.entity_description.is_course:
             return code
             
         if isinstance(code, str) and "_Course_" in code:
@@ -130,9 +146,6 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
             
         if self.entity_description.capability in (CAP_WASHER_COURSE, CAP_DRYER_COURSE):
             return SAMSUNG_WASHER_CYCLES.get(code, f"Cycle {code}")
-            
-        if self.entity_description.capability == "samsungce.ovenMode":
-            return OVEN_MODE_MAP.get(code, code)
             
         return code
 
@@ -149,9 +162,13 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
                 return name.replace("Cycle ", "")
         
         if self.entity_description.capability == "samsungce.ovenMode":
+            for k in OVEN_SELECT_MODES:
+                if OVEN_MODE_MAP.get(k) == name:
+                    return k
             for k, v in OVEN_MODE_MAP.items():
                 if v == name:
-                    return k
+                    return normalize_oven_mode_code(k)
+            return normalize_oven_mode_code(name)
                     
         return name
 
@@ -167,8 +184,9 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
             if cache_key in self.coordinator.hass.data.get(DOMAIN, {}):
                 cached_mode = self.coordinator.hass.data[DOMAIN][cache_key].get("mode")
                 if cached_mode is not None:
-                    machine_state = data.get("ovenOperatingState", {}).get("machineState", {}).get("value")
-                    job_state = data.get("ovenOperatingState", {}).get("ovenJobState", {}).get("value")
+                    oven_state = get_oven_operating_state(data)
+                    machine_state = oven_state.get("machineState", {}).get("value")
+                    job_state = oven_state.get("ovenJobState", {}).get("value")
                     if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
                         return self._translate_code(cached_mode)
 
@@ -184,17 +202,13 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         
         # For ovenMode, strictly enforce the 8 requested modes to match the physical app
         if self.entity_description.capability == "samsungce.ovenMode":
-            forced_modes = [
-                "heating",
-                "Bake",
-                "Broil",
-                "ConvectionBroil",
-                "SlimStrong",
-                "BottomHeat",
-                "ConvectionRoast",
-                "ConvectionBake"
-            ]
-            options = [self._translate_code(opt) for opt in forced_modes]
+            options = []
+            seen = set()
+            for opt in OVEN_SELECT_MODES:
+                label = self._translate_code(opt)
+                if label not in seen:
+                    options.append(label)
+                    seen.add(label)
             current = self.current_option
             if current and current not in options:
                 options.append(current)
@@ -232,12 +246,14 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
             cache_key = f"{self._device_id}_pending_oven_state"
             if cache_key not in self.hass.data[DOMAIN]:
                 self.hass.data[DOMAIN][cache_key] = {}
+            code = normalize_oven_mode_code(code)
             self.hass.data[DOMAIN][cache_key]["mode"] = code
             
             # Check if oven is running. If not, don't send the API command yet.
             data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
-            machine_state = data.get("ovenOperatingState", {}).get("machineState", {}).get("value")
-            job_state = data.get("ovenOperatingState", {}).get("ovenJobState", {}).get("value")
+            oven_state = get_oven_operating_state(data)
+            machine_state = oven_state.get("machineState", {}).get("value")
+            job_state = oven_state.get("ovenJobState", {}).get("value")
             if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
                 # Just cache it and write state
                 self.async_write_ha_state()

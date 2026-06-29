@@ -300,10 +300,10 @@ class SamsungOvenCard extends HTMLElement {
       stateText += ` • ${currentTemp.state}°C`;
     }
 
-    // JS-side translation mapping to guarantee 8 elements (eng : ita)
     const UIModeMap = {
-      "heating": "Convezione",
-      "Bake": "Ventola convenzionale",
+      "Bake": "Convezione",
+      "heating": "Ventola convenzionale",
+      "Conventional": "Ventola convenzionale",
       "Broil": "Grill Grande",
       "ConvectionBroil": "Grill ventilato",
       "SlimStrong": "Cottura intensiva",

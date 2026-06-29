@@ -22,6 +22,11 @@ CAP_WASHER_OPERATING_STATE = "samsungce.washerOperatingState"
 CAP_DRYER_COURSE = "samsungce.dryerCycle"
 CAP_DRYER_OPERATING_STATE = "samsungce.dryerOperatingState"
 CAP_OVEN_OPERATING_STATE = "samsungce.ovenOperatingState"
+CAP_OVEN_OPERATING_STATE_STANDARD = "ovenOperatingState"
+OVEN_OPERATING_STATE_CAPABILITIES = (
+    CAP_OVEN_OPERATING_STATE,
+    CAP_OVEN_OPERATING_STATE_STANDARD,
+)
 CAP_TEMPERATURE_MEASUREMENT = "temperatureMeasurement"
 CAP_THERMOSTAT_COOLING = "thermostatCoolingSetpoint"
 
@@ -69,9 +74,11 @@ SAMSUNG_WASHER_CYCLES = {
 }
 
 OVEN_MODE_MAP = {
-    # The 8 modes requested by the user
-    "heating": "Convezione",
-    "Bake": "Ventola convenzionale",
+    # The 8 modes shown by the oven card. "heating" can appear in status, but
+    # SmartThings rejects it as a start command mode, so it is only a read alias.
+    "Bake": "Convezione",
+    "Conventional": "Ventola convenzionale",
+    "heating": "Ventola convenzionale",
     "Broil": "Grill Grande",
     "ConvectionBroil": "Grill ventilato",
     "SlimStrong": "Cottura intensiva",
@@ -83,7 +90,6 @@ OVEN_MODE_MAP = {
     "SteamCook": "Cottura a Vapore",
     "MWplusHotBlast2": "Microonde + Hot Blast 2",
     "SlimMiddle": "Slim Middle",
-    "SlimStrong": "Slim Strong",
     "SlowCook": "Cottura Lenta",
     "Proof": "Lievitazione",
     "Dehydrate": "Disidratazione",
@@ -92,6 +98,36 @@ OVEN_MODE_MAP = {
     "Descale": "Decalcificazione",
     "Rinse": "Risciacquo"
 }
+
+OVEN_SELECT_MODES = (
+    "Bake",
+    "Conventional",
+    "Broil",
+    "ConvectionBroil",
+    "SlimStrong",
+    "BottomHeat",
+    "ConvectionRoast",
+    "ConvectionBake",
+)
+
+OVEN_MODE_COMMAND_ALIASES = {
+    "heating": "Conventional",
+}
+
+
+def normalize_oven_mode_code(mode):
+    """Return a SmartThings mode code that can be used in commands."""
+    if isinstance(mode, str):
+        return OVEN_MODE_COMMAND_ALIASES.get(mode, mode)
+    return mode
+
+
+def get_oven_operating_state(status):
+    """Return oven operating state capability data from either known API name."""
+    for capability in OVEN_OPERATING_STATE_CAPABILITIES:
+        if capability in status:
+            return status.get(capability) or {}
+    return {}
 
 OVEN_JOB_STATE_MAP = {
     "scheduledStart": "Avvio Programmato",

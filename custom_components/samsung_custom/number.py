@@ -5,7 +5,13 @@ from typing import Optional
 from homeassistant.components.number import NumberEntity, NumberEntityDescription, NumberDeviceClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, CAP_THERMOSTAT_COOLING
+from .const import (
+    DOMAIN,
+    CAP_OVEN_OPERATING_STATE,
+    CAP_OVEN_OPERATING_STATE_STANDARD,
+    CAP_THERMOSTAT_COOLING,
+    get_oven_operating_state,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +74,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 if description.capability in status:
                     numbers.append(GenericNumber(coordinator, device_id, comp_name, name_prefix, description))
                     
-            if "ovenOperatingState" in status:
+            if CAP_OVEN_OPERATING_STATE in status or CAP_OVEN_OPERATING_STATE_STANDARD in status:
                 numbers.append(VirtualCookTimeNumber(coordinator, device_id, comp_name, name_prefix))
 
     async_add_entities(numbers)
@@ -162,8 +168,9 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
             if cache_key in self.coordinator.hass.data.get(DOMAIN, {}):
                 cached_temp = self.coordinator.hass.data[DOMAIN][cache_key].get("temp")
                 if cached_temp is not None:
-                    machine_state = data.get("ovenOperatingState", {}).get("machineState", {}).get("value")
-                    job_state = data.get("ovenOperatingState", {}).get("ovenJobState", {}).get("value")
+                    oven_state = get_oven_operating_state(data)
+                    machine_state = oven_state.get("machineState", {}).get("value")
+                    job_state = oven_state.get("ovenJobState", {}).get("value")
                     if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
                         return float(cached_temp)
 
@@ -190,8 +197,9 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
             
             # Check if oven is running. If not, don't send the API command yet.
             data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
-            machine_state = data.get("ovenOperatingState", {}).get("machineState", {}).get("value")
-            job_state = data.get("ovenOperatingState", {}).get("ovenJobState", {}).get("value")
+            oven_state = get_oven_operating_state(data)
+            machine_state = oven_state.get("machineState", {}).get("value")
+            job_state = oven_state.get("ovenJobState", {}).get("value")
             if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
                 # Just cache it and write state
                 self.async_write_ha_state()

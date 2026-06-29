@@ -4,7 +4,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     DOMAIN, CAP_OPERATING_STATE, CAP_WASHER_OPERATING_STATE, 
-    CAP_DRYER_OPERATING_STATE, CAP_OVEN_OPERATING_STATE
+    CAP_DRYER_OPERATING_STATE, CAP_OVEN_OPERATING_STATE,
+    OVEN_OPERATING_STATE_CAPABILITIES, normalize_oven_mode_code
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 cap = CAP_WASHER_OPERATING_STATE
             elif CAP_DRYER_OPERATING_STATE in status:
                 cap = CAP_DRYER_OPERATING_STATE
-            elif CAP_OVEN_OPERATING_STATE in status:
+            elif any(oven_cap in status for oven_cap in OVEN_OPERATING_STATE_CAPABILITIES):
                 cap = CAP_OVEN_OPERATING_STATE
                 
             if cap:
@@ -88,6 +89,7 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                     mode = self.coordinator.hass.data[DOMAIN][cache_key].get("mode", mode)
                     temp = self.coordinator.hass.data[DOMAIN][cache_key].get("temp", temp)
                     cook_time = self.coordinator.hass.data[DOMAIN][cache_key].get("cook_time", cook_time)
+                mode = normalize_oven_mode_code(mode)
                     
                 # Ensure time and temp are strictly integers to avoid API Error 422 (integer expected)
                 api_temp = int(float(temp))
@@ -102,5 +104,4 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
             await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, "setMachineState", [self._command_arg])
         await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
-
 
