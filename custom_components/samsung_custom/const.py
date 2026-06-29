@@ -118,7 +118,6 @@ OVEN_DEFAULT_MODES = (
 )
 
 OVEN_EXTRA_MODES = (
-    "Conventional",
     "ConvectionBroil",
     "SlimStrong",
     "BottomHeat",
@@ -127,7 +126,7 @@ OVEN_EXTRA_MODES = (
 OVEN_SELECT_MODES = OVEN_DEFAULT_MODES + OVEN_EXTRA_MODES
 
 OVEN_MODE_COMMAND_ALIASES = {
-    "heating": "Conventional",
+    "heating": "ConvectionBake",
 }
 
 OVEN_MODE_NAME_ALIASES = {
@@ -137,8 +136,10 @@ OVEN_MODE_NAME_ALIASES = {
     "Cottura ventilata": "ConvectionBake",
     "Riscaldamento inferiore + convenzione": "ConvectionBake",
     "Riscaldamento inferiore + convezione": "ConvectionBake",
-    "Ventola convenzionale": "Conventional",
+    "Ventola convenzionale": "ConvectionBake",
+    "Ventola convenzionata": "ConvectionBake",
     "Cottura tradizionale": "Bake",
+    "Statico": "Conventional",
 }
 
 

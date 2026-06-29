@@ -82,6 +82,8 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                 mode = data.get("samsungce.ovenMode", {}).get("ovenMode", {}).get("value", "Bake")
                 temp = data.get("ovenSetpoint", {}).get("ovenSetpoint", {}).get("value", 200)
                 cook_time = 30.0
+                remote_enabled = data.get("remoteControlStatus", {}).get("remoteControlEnabled", {}).get("value")
+                door_state = data.get("samsungce.doorState", {}).get("doorState", {}).get("value")
                 
                 # Check for locally cached user selections before the API fully updates
                 cache_key = f"{self._device_id}_pending_oven_state"
@@ -98,10 +100,23 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                 # Pass mode, cookTime in seconds (e.g. 1800 for 30 mins), and temperature
                 # Many Samsung ovens silently ignore the start command if cookTime is 0
                 args = [mode, api_cook_time, api_temp]
+                if str(remote_enabled).lower() in ("false", "off", "disabled"):
+                    _LOGGER.warning(
+                        "Samsung oven remote control is disabled; the start command may be ignored"
+                    )
+                if door_state == "open":
+                    _LOGGER.warning(
+                        "Samsung oven door is open; the start command may be ignored"
+                    )
+                _LOGGER.info(
+                    "Starting Samsung oven with mode=%s, cook_time=%ss, temp=%s",
+                    mode,
+                    api_cook_time,
+                    api_temp,
+                )
                 
             await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd, args)
         else:
             await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, "setMachineState", [self._command_arg])
         await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
-
