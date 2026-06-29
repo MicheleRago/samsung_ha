@@ -301,22 +301,28 @@ class SamsungOvenCard extends HTMLElement {
     }
 
     const UIModeMap = {
-      "Bake": "Convezione",
-      "heating": "Ventola convenzionale",
-      "Conventional": "Ventola convenzionale",
+      "Bake": "Cottura tradizionale",
+      "heating": "Riscaldamento",
+      "Conventional": "Statico",
       "Broil": "Grill Grande",
       "ConvectionBroil": "Grill ventilato",
       "SlimStrong": "Cottura intensiva",
       "BottomHeat": "Rosolatura",
-      "ConvectionRoast": "Riscaldamento superiore + convenzione",
-      "ConvectionBake": "Riscaldamento inferiore + convenzione"
+      "ConvectionRoast": "Arrosto ventilato",
+      "ConvectionBake": "Forno ventilato",
+      "KeepWarm": "Mantenimento caldo",
+      "BreadProof": "Lievitazione",
+      "AirFryer": "Air Fryer",
+      "Dehydrate": "Disidratazione",
+      "SelfClean": "Autopulizia",
+      "SteamClean": "Pulizia a vapore"
     };
 
-    // The 8 allowed visual labels
     const allowedLabels = [
-      "Convezione", "Ventola convenzionale", "Grill Grande", "Grill ventilato", 
-      "Cottura intensiva", "Rosolatura", "Riscaldamento superiore + convenzione", 
-      "Riscaldamento inferiore + convenzione"
+      "Cottura tradizionale", "Statico", "Riscaldamento", "Grill Grande",
+      "Grill ventilato", "Cottura intensiva", "Rosolatura", "Arrosto ventilato",
+      "Forno ventilato", "Mantenimento caldo", "Lievitazione", "Air Fryer",
+      "Disidratazione", "Autopulizia", "Pulizia a vapore"
     ];
 
     let selectHtml = '';

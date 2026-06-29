@@ -149,6 +149,23 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
             
         return code
 
+    def _oven_supported_mode_codes(self):
+        """Return device-supported oven mode codes, if SmartThings exposes them."""
+        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        supported = data.get(self.entity_description.capability, {}).get(self.entity_description.options_attribute, {}).get("value")
+        if not isinstance(supported, list):
+            return []
+
+        mode_codes = []
+        for item in supported:
+            if isinstance(item, str):
+                mode_codes.append(item)
+            elif isinstance(item, dict):
+                mode = item.get("mode") or item.get("ovenMode") or item.get("value")
+                if isinstance(mode, str):
+                    mode_codes.append(mode)
+        return mode_codes
+
     def _reverse_translate(self, name):
         """Map name back to code if possible, otherwise return name."""
         if not self.entity_description.is_course and self.entity_description.capability != "samsungce.ovenMode":
@@ -162,6 +179,12 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
                 return name.replace("Cycle ", "")
         
         if self.entity_description.capability == "samsungce.ovenMode":
+            alias_code = normalize_oven_mode_code(name)
+            if alias_code != name:
+                return alias_code
+            for k in self._oven_supported_mode_codes():
+                if OVEN_MODE_MAP.get(k, k) == name:
+                    return k
             for k in OVEN_SELECT_MODES:
                 if OVEN_MODE_MAP.get(k) == name:
                     return k
@@ -200,11 +223,16 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         if not data:
             return []
         
-        # For ovenMode, strictly enforce the 8 requested modes to match the physical app
+        # For ovenMode, prefer the device-reported modes; use known Samsung
+        # oven modes only when SmartThings does not expose supportedOvenModes.
         if self.entity_description.capability == "samsungce.ovenMode":
+            mode_codes = self._oven_supported_mode_codes() or list(OVEN_SELECT_MODES)
+            if not mode_codes:
+                mode_codes = list(OVEN_SELECT_MODES)
+
             options = []
             seen = set()
-            for opt in OVEN_SELECT_MODES:
+            for opt in mode_codes:
                 label = self._translate_code(opt)
                 if label not in seen:
                     options.append(label)

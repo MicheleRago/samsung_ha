@@ -74,17 +74,22 @@ SAMSUNG_WASHER_CYCLES = {
 }
 
 OVEN_MODE_MAP = {
-    # The 8 modes shown by the oven card. "heating" can appear in status, but
-    # SmartThings rejects it as a start command mode, so it is only a read alias.
-    "Bake": "Convezione",
-    "Conventional": "Ventola convenzionale",
-    "heating": "Ventola convenzionale",
+    # "heating" can appear in status, but SmartThings rejects it as a start
+    # command mode, so it is only a read alias.
+    "Bake": "Cottura tradizionale",
+    "Conventional": "Statico",
+    "heating": "Riscaldamento",
     "Broil": "Grill Grande",
     "ConvectionBroil": "Grill ventilato",
     "SlimStrong": "Cottura intensiva",
     "BottomHeat": "Rosolatura",
-    "ConvectionRoast": "Riscaldamento superiore + convenzione",
-    "ConvectionBake": "Riscaldamento inferiore + convenzione",
+    "ConvectionRoast": "Arrosto ventilato",
+    "ConvectionBake": "Forno ventilato",
+    "KeepWarm": "Mantenimento caldo",
+    "BreadProof": "Lievitazione",
+    "AirFryer": "Air Fryer",
+    "SelfClean": "Autopulizia",
+    "SteamClean": "Pulizia a vapore",
     
     # Altre modalità per sicurezza
     "SteamCook": "Cottura a Vapore",
@@ -99,26 +104,51 @@ OVEN_MODE_MAP = {
     "Rinse": "Risciacquo"
 }
 
-OVEN_SELECT_MODES = (
+OVEN_DEFAULT_MODES = (
     "Bake",
-    "Conventional",
     "Broil",
+    "ConvectionBake",
+    "ConvectionRoast",
+    "KeepWarm",
+    "BreadProof",
+    "AirFryer",
+    "Dehydrate",
+    "SelfClean",
+    "SteamClean",
+)
+
+OVEN_EXTRA_MODES = (
+    "Conventional",
     "ConvectionBroil",
     "SlimStrong",
     "BottomHeat",
-    "ConvectionRoast",
-    "ConvectionBake",
 )
+
+OVEN_SELECT_MODES = OVEN_DEFAULT_MODES + OVEN_EXTRA_MODES
 
 OVEN_MODE_COMMAND_ALIASES = {
     "heating": "Conventional",
+}
+
+OVEN_MODE_NAME_ALIASES = {
+    "Convezione": "ConvectionBake",
+    "Forno ventilato": "ConvectionBake",
+    "Ventilato": "ConvectionBake",
+    "Cottura ventilata": "ConvectionBake",
+    "Riscaldamento inferiore + convenzione": "ConvectionBake",
+    "Riscaldamento inferiore + convezione": "ConvectionBake",
+    "Ventola convenzionale": "Conventional",
+    "Cottura tradizionale": "Bake",
 }
 
 
 def normalize_oven_mode_code(mode):
     """Return a SmartThings mode code that can be used in commands."""
     if isinstance(mode, str):
-        return OVEN_MODE_COMMAND_ALIASES.get(mode, mode)
+        return OVEN_MODE_COMMAND_ALIASES.get(
+            mode,
+            OVEN_MODE_NAME_ALIASES.get(mode, mode),
+        )
     return mode
 
 
