@@ -185,12 +185,14 @@ class SamsungFridgeCard extends HTMLElement {
             const state = hass.states[entity];
             if (state) {
               const current = parseFloat(state.state);
-              const step = parseFloat(state.attributes.step || 1.0);
-              const max = parseFloat(state.attributes.max || 10.0);
-              const min = parseFloat(state.attributes.min || -25.0);
-              let newVal = actionType === 'temp_up' ? current + step : current - step;
-              newVal = Math.min(Math.max(newVal, min), max);
-              hass.callService('number', 'set_value', { entity_id: entity, value: newVal });
+              if (!isNaN(current)) {
+                const step = parseFloat(state.attributes.step ?? 1.0);
+                const max = parseFloat(state.attributes.max ?? 10.0);
+                const min = parseFloat(state.attributes.min ?? -25.0);
+                let newVal = actionType === 'temp_up' ? current + step : current - step;
+                newVal = Math.min(Math.max(newVal, min), max);
+                hass.callService('number', 'set_value', { entity_id: entity, value: newVal });
+              }
             }
           }
         }
@@ -278,7 +280,7 @@ class SamsungFridgeCard extends HTMLElement {
       </div>
 
       <!-- Freezer Mode Select -->
-      ${modeSelect ? `
+      ${modeSelect && modeSelect.attributes && Array.isArray(modeSelect.attributes.options) ? `
         <div class="tile" style="margin-top: 12px; grid-column: span 2;">
           <div class="tile-header" style="margin-bottom: 0;">
             <div class="tile-icon"><ha-icon icon="mdi:tune-vertical"></ha-icon></div>

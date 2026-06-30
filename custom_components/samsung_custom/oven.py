@@ -32,6 +32,7 @@ class OvenStartSettings:
     mode: str
     temperature: int
     cook_time_minutes: float
+    cook_time_seconds: int
     operation_time: str
     remote_enabled: Any
     door_state: Any
@@ -70,11 +71,16 @@ def oven_is_waiting_for_start(status: dict[str, Any]) -> bool:
 
 def format_operation_time(cook_time_minutes: float) -> str:
     """Convert minutes to SmartThings HH:MM:SS operation time."""
-    total_seconds = max(0, int(_float_value(cook_time_minutes, DEFAULT_OVEN_COOK_TIME) * 60))
+    total_seconds = operation_seconds(cook_time_minutes)
 
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
+def operation_seconds(cook_time_minutes: float) -> int:
+    """Convert minutes to whole seconds for the legacy oven start command."""
+    return max(0, int(_float_value(cook_time_minutes, DEFAULT_OVEN_COOK_TIME) * 60))
 
 
 def _float_value(value: Any, default: float) -> float:
@@ -101,6 +107,7 @@ def oven_start_settings(hass, coordinator, device_id: str, component: str) -> Ov
         mode=mode,
         temperature=temperature,
         cook_time_minutes=cook_time_minutes,
+        cook_time_seconds=operation_seconds(cook_time_minutes),
         operation_time=format_operation_time(cook_time_minutes),
         remote_enabled=status.get(CAP_REMOTE_CONTROL, {}).get("remoteControlEnabled", {}).get("value"),
         door_state=status.get(CAP_OVEN_DOOR, {}).get("doorState", {}).get("value"),

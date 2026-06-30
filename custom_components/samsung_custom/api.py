@@ -132,3 +132,16 @@ class SmartThingsApi:
         
         await self._request("POST", url, json=payload)
         _LOGGER.debug("Commands executed successfully: %s", json.dumps(commands, ensure_ascii=False))
+
+    async def execute_legacy_commands(self, device_id: str, commands: list[dict[str, Any]]) -> None:
+        """Execute commands using the legacy SmartThings list payload."""
+        url = f"{BASE_URL}/devices/{device_id}/commands"
+
+        _LOGGER.warning(
+            "SmartThings request: POST %s payload=%s",
+            url,
+            json.dumps(commands, ensure_ascii=False),
+        )
+
+        await self._request("POST", url, json=commands)
+        _LOGGER.debug("Legacy commands executed successfully: %s", json.dumps(commands, ensure_ascii=False))

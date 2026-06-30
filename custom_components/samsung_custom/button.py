@@ -6,6 +6,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import (
     DOMAIN, CAP_OPERATING_STATE, CAP_WASHER_OPERATING_STATE, 
     CAP_DRYER_OPERATING_STATE, CAP_OVEN_OPERATING_STATE,
+    CAP_OVEN_OPERATING_STATE_STANDARD,
     OVEN_OPERATING_STATE_CAPABILITIES
 )
 from .oven import oven_start_commands, oven_start_settings
@@ -84,7 +85,6 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                     self._device_id,
                     self._component,
                 )
-                commands = oven_start_commands(self._component, settings)
 
                 if str(settings.remote_enabled).lower() in ("false", "off", "disabled"):
                     _LOGGER.warning(
@@ -94,15 +94,39 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                     _LOGGER.warning(
                         "Samsung oven door is open; the start command may be ignored"
                     )
-                _LOGGER.error(
-                    "OVEN SMARTTHINGS REQUEST: device_id=%s mode=%s operation_time=%s temp=%s payload=%s",
-                    self._device_id,
-                    settings.mode,
-                    settings.operation_time,
-                    settings.temperature,
-                    json.dumps({"commands": commands}, ensure_ascii=False),
-                )
-                await self.coordinator.api.execute_commands(self._device_id, commands)
+
+                if settings.mode == "FanConventional":
+                    commands = oven_start_commands(self._component, settings)
+                    payload = {"commands": commands}
+                    _LOGGER.error(
+                        "OVEN SMARTTHINGS REQUEST: device_id=%s method=batch mode=%s operation_time=%s temp=%s payload=%s",
+                        self._device_id,
+                        settings.mode,
+                        settings.operation_time,
+                        settings.temperature,
+                        json.dumps(payload, ensure_ascii=False),
+                    )
+                    await self.coordinator.api.execute_commands(self._device_id, commands)
+                else:
+                    legacy_command = {
+                        "component": self._component,
+                        "capability": CAP_OVEN_OPERATING_STATE_STANDARD,
+                        "command": "start",
+                        "arguments": [
+                            settings.mode,
+                            settings.cook_time_seconds,
+                            settings.temperature,
+                        ],
+                    }
+                    _LOGGER.error(
+                        "OVEN SMARTTHINGS REQUEST: device_id=%s method=legacy mode=%s cook_time=%ss temp=%s payload=%s",
+                        self._device_id,
+                        settings.mode,
+                        settings.cook_time_seconds,
+                        settings.temperature,
+                        json.dumps([legacy_command], ensure_ascii=False),
+                    )
+                    await self.coordinator.api.execute_legacy_commands(self._device_id, [legacy_command])
             else:
                 await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd)
         else:
