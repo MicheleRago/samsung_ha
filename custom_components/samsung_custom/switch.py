@@ -1,4 +1,3 @@
-import asyncio
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -13,6 +12,14 @@ from .const import (
     CAP_SWITCH,
     CAP_WASHING_OPTIONS,
     DOMAIN,
+)
+from .entity import (
+    capability_value,
+    component_prefix,
+    component_status,
+    iter_component_statuses,
+    refresh_after_command,
+    samsung_device_info,
 )
 
 @dataclass(kw_only=True)
@@ -128,20 +135,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     switches = []
     
-    for device_id, device_data in coordinator.data.items():
-        components = device_data.get("status", {})
-        device_info = device_data.get("device_info", {})
-        device_name = device_info.get("name", "Samsung Appliance")
-        
-        for comp_name, status in components.items():
-            name_prefix = f"{device_name} ({comp_name})" if comp_name != "main" else device_name
-            
-            if CAP_SWITCH in status:
-                switches.append(GenericPowerSwitch(coordinator, device_id, comp_name, name_prefix))
-                
-            for description in SWITCH_TYPES:
-                if description.capability in status:
-                    switches.append(GenericOptionSwitch(coordinator, device_id, comp_name, name_prefix, description))
+    for device_id, component, status, name_prefix in iter_component_statuses(coordinator):
+        if CAP_SWITCH in status:
+            switches.append(GenericPowerSwitch(coordinator, device_id, component, name_prefix))
+
+        for description in SWITCH_TYPES:
+            if description.capability in status:
+                switches.append(GenericOptionSwitch(coordinator, device_id, component, name_prefix, description))
             
     async_add_entities(switches)
 
@@ -155,38 +155,40 @@ class GenericPowerSwitch(CoordinatorEntity, SwitchEntity):
         self._component = component
         self._device_name = name
         
-        comp_prefix = f"_{component}" if component != "main" else ""
+        comp_prefix = component_prefix(component)
         self._attr_unique_id = f"{device_id}{comp_prefix}_power"
         self._attr_name = "Power"
         self._attr_has_entity_name = True
 
     @property
     def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
-            "name": self._device_name.replace(f" ({self._component})", ""),
-            "manufacturer": "Samsung",
-        }
+        return samsung_device_info(self._device_id, self._device_name, self._component)
 
     @property
     def is_on(self):
         """Return true if device is on."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if not data:
             return False
-        return data.get(CAP_SWITCH, {}).get("switch", {}).get("value") == "on"
+        return capability_value(data, CAP_SWITCH, "switch") == "on"
 
     async def async_turn_on(self, **kwargs):
         """Turn the device on."""
-        await self.coordinator.api.execute_command(self._device_id, self._component, CAP_SWITCH, "on")
-        await asyncio.sleep(2)
-        await self.coordinator.async_request_refresh()
+        await self._async_set_power("on")
 
     async def async_turn_off(self, **kwargs):
         """Turn the device off."""
-        await self.coordinator.api.execute_command(self._device_id, self._component, CAP_SWITCH, "off")
-        await asyncio.sleep(2)
-        await self.coordinator.async_request_refresh()
+        await self._async_set_power("off")
+
+    async def _async_set_power(self, command: str) -> None:
+        """Send a power command and refresh state."""
+        await self.coordinator.api.execute_command(
+            self._device_id,
+            self._component,
+            CAP_SWITCH,
+            command,
+        )
+        await refresh_after_command(self.coordinator)
 
 
 class GenericOptionSwitch(CoordinatorEntity, SwitchEntity):
@@ -214,39 +216,43 @@ class GenericOptionSwitch(CoordinatorEntity, SwitchEntity):
         else:
             self._off_arg = [self._off_value] if self._off_value is not None else []
         
-        comp_prefix = f"_{component}" if component != "main" else ""
+        comp_prefix = component_prefix(component)
         self._attr_unique_id = f"{device_id}{comp_prefix}_{description.capability}_{description.attribute}"
         self._attr_has_entity_name = True
 
     @property
     def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
-            "name": self._device_name.replace(f" ({self._component})", ""),
-            "manufacturer": "Samsung",
-        }
+        return samsung_device_info(self._device_id, self._device_name, self._component)
 
     @property
     def is_on(self):
         """Return true if switch is on."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if not data:
             return False
-        val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
-        
-        if isinstance(val, dict) and "value" in val:
-            val = val.get("value")
-            
+        val = capability_value(
+            data,
+            self.entity_description.capability,
+            self.entity_description.attribute,
+        )
+
         return val == self._on_value
 
     async def async_turn_on(self, **kwargs):
         """Turn the option on."""
-        await self.coordinator.api.execute_command(self._device_id, self._component, self.entity_description.capability, self._command_on, self._on_arg)
-        await asyncio.sleep(2)
-        await self.coordinator.async_request_refresh()
+        await self._async_set_option(self._command_on, self._on_arg)
 
     async def async_turn_off(self, **kwargs):
         """Turn the option off."""
-        await self.coordinator.api.execute_command(self._device_id, self._component, self.entity_description.capability, self._command_off, self._off_arg)
-        await asyncio.sleep(2)
-        await self.coordinator.async_request_refresh()
+        await self._async_set_option(self._command_off, self._off_arg)
+
+    async def _async_set_option(self, command: str, arguments: list[Any]) -> None:
+        """Send an option command and refresh state."""
+        await self.coordinator.api.execute_command(
+            self._device_id,
+            self._component,
+            self.entity_description.capability,
+            command,
+            arguments,
+        )
+        await refresh_after_command(self.coordinator)

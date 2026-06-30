@@ -9,11 +9,18 @@ from .const import (
     CAP_THERMOSTAT_COOLING,
     OVEN_OPERATING_STATE_CAPABILITIES,
 )
+from .entity import (
+    capability_value,
+    component_prefix,
+    component_status,
+    iter_component_statuses,
+    refresh_after_command,
+    samsung_device_info,
+)
 from .oven import (
     DEFAULT_OVEN_COOK_TIME,
     cached_oven_setting,
     cache_oven_setting,
-    component_status,
     oven_is_waiting_for_start,
 )
 
@@ -64,20 +71,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     numbers = []
     
-    for device_id, device_data in coordinator.data.items():
-        components = device_data.get("status", {})
-        device_info = device_data.get("device_info", {})
-        device_name = device_info.get("name", "Samsung Appliance")
-        
-        for comp_name, status in components.items():
-            name_prefix = f"{device_name} ({comp_name})" if comp_name != "main" else device_name
+    for device_id, component, status, name_prefix in iter_component_statuses(coordinator):
+        for description in NUMBER_TYPES:
+            if description.capability in status:
+                numbers.append(GenericNumber(coordinator, device_id, component, name_prefix, description))
 
-            for description in NUMBER_TYPES:
-                if description.capability in status:
-                    numbers.append(GenericNumber(coordinator, device_id, comp_name, name_prefix, description))
-                    
-            if any(capability in status for capability in OVEN_OPERATING_STATE_CAPABILITIES):
-                numbers.append(VirtualCookTimeNumber(coordinator, device_id, comp_name, name_prefix))
+        if any(capability in status for capability in OVEN_OPERATING_STATE_CAPABILITIES):
+            numbers.append(VirtualCookTimeNumber(coordinator, device_id, component, name_prefix))
 
     async_add_entities(numbers)
 
@@ -94,7 +94,7 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
         self._component = component
         self._device_name = device_name
         
-        comp_prefix = f"_{component}" if component != "main" else ""
+        comp_prefix = component_prefix(component)
         self._attr_unique_id = f"{device_id}{comp_prefix}_{description.capability}_{description.attribute}"
         
         # Override name dynamically based on component for fridges
@@ -115,18 +115,18 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
     @property
     def device_info(self):
         """Return device info."""
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
-            "name": self._device_name.replace(f" ({self._component})", ""),
-            "manufacturer": "Samsung",
-        }
+        return samsung_device_info(self._device_id, self._device_name, self._component)
 
     @property
     def native_min_value(self) -> float:
         """Return the minimum value."""
         data = component_status(self.coordinator, self._device_id, self._component)
         if data:
-            range_data = data.get(self.entity_description.capability, {}).get("coolingSetpointRange", {}).get("value")
+            range_data = capability_value(
+                data,
+                self.entity_description.capability,
+                "coolingSetpointRange",
+            )
             if isinstance(range_data, list) and len(range_data) >= 1:
                 try:
                     return float(range_data[0])
@@ -144,7 +144,11 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
         """Return the maximum value."""
         data = component_status(self.coordinator, self._device_id, self._component)
         if data:
-            range_data = data.get(self.entity_description.capability, {}).get("coolingSetpointRange", {}).get("value")
+            range_data = capability_value(
+                data,
+                self.entity_description.capability,
+                "coolingSetpointRange",
+            )
             if isinstance(range_data, list) and len(range_data) >= 2:
                 try:
                     return float(range_data[1])
@@ -170,7 +174,11 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
             if cached_temp is not None and oven_is_waiting_for_start(data):
                 return float(cached_temp)
 
-        val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
+        val = capability_value(
+            data,
+            self.entity_description.capability,
+            self.entity_description.attribute,
+        )
         
         if val is None:
             return None
@@ -182,8 +190,6 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
-        import asyncio
-        
         # Cache the selected temp for the start button
         if self.entity_description.capability == CAP_OVEN_SETPOINT:
             cache_oven_setting(self.hass, self._device_id, "temp", value)
@@ -202,8 +208,7 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
             self.entity_description.command, 
             [value]
         )
-        await asyncio.sleep(2)
-        await self.coordinator.async_request_refresh()
+        await refresh_after_command(self.coordinator)
 
 class VirtualCookTimeNumber(CoordinatorEntity, NumberEntity):
     """Virtual number entity for oven cook time."""
@@ -225,11 +230,7 @@ class VirtualCookTimeNumber(CoordinatorEntity, NumberEntity):
     @property
     def device_info(self):
         """Return device info."""
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
-            "name": self._device_name.replace(f" ({self._component})", ""),
-            "manufacturer": "Samsung",
-        }
+        return samsung_device_info(self._device_id, self._device_name, self._component)
 
     @property
     def native_value(self):

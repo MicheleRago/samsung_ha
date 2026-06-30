@@ -15,6 +15,7 @@ from .const import (
     get_oven_operating_state,
     normalize_oven_mode_code,
 )
+from .entity import capability_value, component_status
 
 DEFAULT_OVEN_COOK_TIME = 30.0
 DEFAULT_OVEN_MODE = "Bake"
@@ -36,11 +37,6 @@ class OvenStartSettings:
     operation_time: str
     remote_enabled: Any
     door_state: Any
-
-
-def component_status(coordinator, device_id: str, component: str) -> dict[str, Any]:
-    """Return cached SmartThings status for a device component."""
-    return coordinator.data.get(device_id, {}).get("status", {}).get(component, {})
 
 
 def pending_oven_state(hass, device_id: str, create: bool = False) -> dict[str, Any]:
@@ -96,8 +92,13 @@ def oven_start_settings(hass, coordinator, device_id: str, component: str) -> Ov
     status = component_status(coordinator, device_id, component)
     pending = pending_oven_state(hass, device_id)
 
-    raw_mode = status.get(CAP_OVEN_MODE, {}).get("ovenMode", {}).get("value", DEFAULT_OVEN_MODE)
-    raw_temperature = status.get(CAP_OVEN_SETPOINT, {}).get("ovenSetpoint", {}).get("value", DEFAULT_OVEN_TEMPERATURE)
+    raw_mode = capability_value(status, CAP_OVEN_MODE, "ovenMode", DEFAULT_OVEN_MODE)
+    raw_temperature = capability_value(
+        status,
+        CAP_OVEN_SETPOINT,
+        "ovenSetpoint",
+        DEFAULT_OVEN_TEMPERATURE,
+    )
 
     mode = normalize_oven_mode_code(pending.get("mode", raw_mode)) or DEFAULT_OVEN_MODE
     temperature = int(_float_value(pending.get("temp", raw_temperature), DEFAULT_OVEN_TEMPERATURE))
@@ -109,8 +110,8 @@ def oven_start_settings(hass, coordinator, device_id: str, component: str) -> Ov
         cook_time_minutes=cook_time_minutes,
         cook_time_seconds=operation_seconds(cook_time_minutes),
         operation_time=format_operation_time(cook_time_minutes),
-        remote_enabled=status.get(CAP_REMOTE_CONTROL, {}).get("remoteControlEnabled", {}).get("value"),
-        door_state=status.get(CAP_OVEN_DOOR, {}).get("doorState", {}).get("value"),
+        remote_enabled=capability_value(status, CAP_REMOTE_CONTROL, "remoteControlEnabled"),
+        door_state=capability_value(status, CAP_OVEN_DOOR, "doorState"),
     )
 
 

@@ -15,7 +15,15 @@ from .const import (
     OVEN_SELECT_MODES,
     normalize_oven_mode_code,
 )
-from .oven import cached_oven_setting, cache_oven_setting, component_status, oven_is_waiting_for_start
+from .entity import (
+    capability_value,
+    component_prefix,
+    component_status,
+    iter_component_statuses,
+    refresh_after_command,
+    samsung_device_info,
+)
+from .oven import cached_oven_setting, cache_oven_setting, oven_is_waiting_for_start
 
 @dataclass(kw_only=True)
 class SamsungSelectEntityDescription(SelectEntityDescription):
@@ -81,17 +89,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     selects = []
     
-    for device_id, device_data in coordinator.data.items():
-        components = device_data.get("status", {})
-        device_info = device_data.get("device_info", {})
-        device_name = device_info.get("name", "Samsung Appliance")
-        
-        for comp_name, status in components.items():
-            name_prefix = f"{device_name} ({comp_name})" if comp_name != "main" else device_name
-
-            for description in SELECT_TYPES:
-                if description.capability in status:
-                    selects.append(GenericSelect(coordinator, device_id, comp_name, name_prefix, description))
+    for device_id, component, status, name_prefix in iter_component_statuses(coordinator):
+        for description in SELECT_TYPES:
+            if description.capability in status:
+                selects.append(GenericSelect(coordinator, device_id, component, name_prefix, description))
             
     async_add_entities(selects)
 
@@ -107,18 +108,14 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         self._component = component
         self._device_name = device_name
         
-        comp_prefix = f"_{component}" if component != "main" else ""
+        comp_prefix = component_prefix(component)
         self._attr_unique_id = f"{device_id}{comp_prefix}_{description.capability}_{description.attribute}"
         self._attr_name = description.name
         self._attr_has_entity_name = True
 
     @property
     def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
-            "name": self._device_name.replace(f" ({self._component})", ""),
-            "manufacturer": "Samsung",
-        }
+        return samsung_device_info(self._device_id, self._device_name, self._component)
 
     def _translate_code(self, code):
         """Map code to name if possible, otherwise return code."""
@@ -142,7 +139,11 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
     def _oven_supported_mode_codes(self):
         """Return device-supported oven mode codes, if SmartThings exposes them."""
         data = component_status(self.coordinator, self._device_id, self._component)
-        supported = data.get(self.entity_description.capability, {}).get(self.entity_description.options_attribute, {}).get("value")
+        supported = capability_value(
+            data,
+            self.entity_description.capability,
+            self.entity_description.options_attribute,
+        )
         if not isinstance(supported, list):
             return []
 
@@ -197,7 +198,11 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
             if cached_mode is not None and oven_is_waiting_for_start(data):
                 return self._translate_code(cached_mode)
 
-        val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
+        val = capability_value(
+            data,
+            self.entity_description.capability,
+            self.entity_description.attribute,
+        )
         return self._translate_code(val)
 
     @property
@@ -226,13 +231,26 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
                 options.append(current)
             return options
             
-        supported = data.get(self.entity_description.capability, {}).get(self.entity_description.options_attribute, {}).get("value")
+        supported = capability_value(
+            data,
+            self.entity_description.capability,
+            self.entity_description.options_attribute,
+        )
         
         # Fallback for old washer APIs
         if not supported and self.entity_description.is_course:
-            supported = data.get(self.entity_description.capability, {}).get("supportedCycles", {}).get("value")
+            supported = capability_value(
+                data,
+                self.entity_description.capability,
+                "supportedCycles",
+            )
             
-        if self.entity_description.is_course and isinstance(supported, list) and len(supported) > 0 and isinstance(supported[0], dict):
+        if (
+            self.entity_description.is_course
+            and isinstance(supported, list)
+            and len(supported) > 0
+            and isinstance(supported[0], dict)
+        ):
             return [self._translate_code(str(item.get("cycle"))) for item in supported if "cycle" in item]
         
         options = [self._translate_code(opt) for opt in (supported or [])]
@@ -245,7 +263,6 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
-        import asyncio
         code = self._reverse_translate(option)
         
         # Cache the selected mode for the start button
@@ -267,5 +284,4 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
             self.entity_description.command, 
             [code]
         )
-        await asyncio.sleep(2)
-        await self.coordinator.async_request_refresh()
+        await refresh_after_command(self.coordinator)

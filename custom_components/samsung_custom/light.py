@@ -1,4 +1,3 @@
-import asyncio
 import math
 from typing import Any
 
@@ -10,6 +9,14 @@ from homeassistant.components.light import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CAP_OVEN_LAMP, DOMAIN
+from .entity import (
+    capability_value,
+    component_prefix,
+    component_status,
+    iter_component_statuses,
+    refresh_after_command,
+    samsung_device_info,
+)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the light platform."""
@@ -17,16 +24,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     lights = []
     
-    for device_id, device_data in coordinator.data.items():
-        components = device_data.get("status", {})
-        device_info = device_data.get("device_info", {})
-        device_name = device_info.get("name", "Samsung Appliance")
-        
-        for comp_name, status in components.items():
-            name_prefix = f"{device_name} ({comp_name})" if comp_name != "main" else device_name
-            
-            if CAP_OVEN_LAMP in status:
-                lights.append(SamsungLampLight(coordinator, device_id, comp_name, name_prefix))
+    for device_id, component, status, name_prefix in iter_component_statuses(coordinator):
+        if CAP_OVEN_LAMP in status:
+            lights.append(SamsungLampLight(coordinator, device_id, component, name_prefix))
                 
     async_add_entities(lights)
 
@@ -40,7 +40,7 @@ class SamsungLampLight(CoordinatorEntity, LightEntity):
         self._component = component
         self._device_name = name
         
-        comp_prefix = f"_{component}" if component != "main" else ""
+        comp_prefix = component_prefix(component)
         self._attr_unique_id = f"{device_id}{comp_prefix}_samsungce_lamp"
         self._attr_name = "Light"
         self._attr_has_entity_name = True
@@ -49,30 +49,26 @@ class SamsungLampLight(CoordinatorEntity, LightEntity):
 
     @property
     def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
-            "name": self._device_name.replace(f" ({self._component})", ""),
-            "manufacturer": "Samsung",
-        }
+        return samsung_device_info(self._device_id, self._device_name, self._component)
 
     @property
     def is_on(self):
         """Return true if light is on."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if not data:
             return False
-        
-        level = data.get(CAP_OVEN_LAMP, {}).get("brightnessLevel", {}).get("value")
+
+        level = capability_value(data, CAP_OVEN_LAMP, "brightnessLevel")
         return level != "off" and level is not None
 
     @property
     def brightness(self):
         """Return the brightness of the light."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if not data:
             return 0
-            
-        level = data.get(CAP_OVEN_LAMP, {}).get("brightnessLevel", {}).get("value")
+
+        level = capability_value(data, CAP_OVEN_LAMP, "brightnessLevel")
         
         if level == "off" or level is None:
             return 0
@@ -89,7 +85,7 @@ class SamsungLampLight(CoordinatorEntity, LightEntity):
 
     def _get_supported_levels(self, data):
         """Get list of supported brightness levels without 'off'."""
-        supported = data.get(CAP_OVEN_LAMP, {}).get("supportedBrightnessLevel", {}).get("value", [])
+        supported = capability_value(data, CAP_OVEN_LAMP, "supportedBrightnessLevel", [])
         if not isinstance(supported, list):
             supported = []
         return [l for l in supported if l != "off"]
@@ -98,7 +94,7 @@ class SamsungLampLight(CoordinatorEntity, LightEntity):
         """Turn the light on."""
         brightness = kwargs.get(ATTR_BRIGHTNESS)
         
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         supported_levels = self._get_supported_levels(data)
         
         if brightness is not None and supported_levels:
@@ -117,8 +113,7 @@ class SamsungLampLight(CoordinatorEntity, LightEntity):
             "setBrightnessLevel", 
             [target_level]
         )
-        await asyncio.sleep(2)
-        await self.coordinator.async_request_refresh()
+        await refresh_after_command(self.coordinator)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
@@ -129,5 +124,4 @@ class SamsungLampLight(CoordinatorEntity, LightEntity):
             "setBrightnessLevel", 
             ["off"]
         )
-        await asyncio.sleep(2)
-        await self.coordinator.async_request_refresh()
+        await refresh_after_command(self.coordinator)

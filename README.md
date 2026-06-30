@@ -1,43 +1,77 @@
 # Samsung Custom Appliances for Home Assistant
 
-Questa integrazione personalizzata per Home Assistant permette di controllare e monitorare i tuoi elettrodomestici Samsung (Lavastoviglie, Lavasciuga, Forno, Frigorifero) aggirando le limitazioni dell'integrazione ufficiale SmartThings.
+Integrazione custom per controllare elettrodomestici Samsung tramite SmartThings REST API da Home Assistant.
 
-Viene utilizzata una comunicazione REST API diretta verso i server SmartThings per esporre funzionalità avanzate come:
-- Selezione del programma (Lavastoviglie, Lavasciuga)
-- Controllo dell'accensione/spegnimento e Avvio/Pausa/Stop
-- Monitoraggio delle temperature
-- Lettura dinamica delle *capabilities* supportate dal tuo modello specifico.
+Supporta entità dinamiche per lavastoviglie, lavatrice/lavasciuga, forno e frigorifero in base alle capability esposte dal singolo dispositivo.
 
-## Installazione tramite HACS
+## Funzionalità
 
-Questa repository è compatibile con [HACS](https://hacs.xyz/).
+- Accensione, spegnimento e comandi `Run`, `Pause`, `Stop`.
+- Selezione programmi per lavastoviglie, lavatrice e asciugatrice.
+- Controlli forno per modalità, temperatura, tempo cottura, start/pause/stop e lampada.
+- Sensori stato macchina, stato lavoro, tempi residui/completamento, temperatura e remoto.
+- Switch opzioni dove supportati: mezzo carico, speed booster, sanitize, auto open door, power cool/freeze e child lock.
 
-1. Apri **HACS** in Home Assistant.
-2. Clicca su **Integrazioni**.
-3. Clicca sui 3 pallini in alto a destra e seleziona **Repository personalizzati**.
-4. Incolla l'URL di questa repository GitHub.
-5. Seleziona **Integrazione** come categoria e clicca su Aggiungi.
-6. Una volta aggiunta, cerca "Samsung Custom Appliances" e installala.
-7. **Riavvia Home Assistant**.
+## Installazione
 
-## Configurazione
+Questa repository è compatibile con HACS come integrazione custom.
 
-Per usare l'integrazione, ti servirà un **Personal Access Token (PAT)** di SmartThings.
+1. Apri HACS in Home Assistant.
+2. Vai in **Integrazioni**.
+3. Apri **Repository personalizzati**.
+4. Incolla l'URL della repository.
+5. Seleziona **Integrazione** come categoria.
+6. Installa **Samsung Custom Appliances**.
+7. Riavvia Home Assistant.
 
-### Come generare il Token:
-1. Vai sul [Portale SmartThings per i Token](https://account.smartthings.com/tokens).
-2. Accedi con il tuo account Samsung.
-3. Clicca su **Generate new token**.
-4. Assegna un nome (es. "Home Assistant Custom").
-5. Spunta le caselle sotto la voce **Devices** (`r:devices:*` e `x:devices:*`).
-6. Clicca su **Generate token** e copia la chiave. **Attenzione: viene mostrata una volta sola.**
+## Configurazione OAuth
 
-### Aggiunta a Home Assistant
-1. Vai su **Impostazioni > Dispositivi e Servizi**.
-2. Clicca su **Aggiungi Integrazione**.
-3. Cerca "Samsung Custom Appliances".
-4. Incolla il tuo Personal Access Token nel campo richiesto.
-5. L'integrazione troverà automaticamente tutti gli elettrodomestici compatibili sul tuo account e li configurerà.
+Il config flow usa OAuth SmartThings, non un Personal Access Token.
 
-## Attenzione (Modalità Remota)
-Per poter avviare la lavastoviglie o la lavatrice tramite Home Assistant (es. tasto *Run*), **devi ricordarti di attivare fisicamente il pulsante "Smart Control" (o Remote Control)** sul pannello dell'elettrodomestico quando lo carichi. Per motivi di sicurezza, la maggior parte degli elettrodomestici Samsung disabilita l'avvio remoto ogni volta che lo sportello viene aperto. L'integrazione espone un sensore `Remote Control` in modo che tu possa verificare lo stato della modalità remota da Home Assistant.
+1. Crea un'app OAuth SmartThings con scope `r:devices:*` e `x:devices:*`.
+2. Imposta il redirect URI su `https://google.com`.
+3. In Home Assistant vai in **Impostazioni > Dispositivi e servizi > Aggiungi integrazione**.
+4. Cerca **Samsung Custom Appliances**.
+5. Inserisci `Client ID` e `Client Secret`.
+6. Apri il link di autorizzazione mostrato dal flow.
+7. Dopo il redirect su Google, copia l'intero URL del browser e incollalo nel campo richiesto.
+
+L'integrazione salva access token e refresh token nella config entry e aggiorna i token automaticamente quando SmartThings risponde con `401`.
+
+## Card Lovelace
+
+Le card restano in cartelle top-level per non rompere i percorsi usati nelle risorse Lovelace.
+
+- `samsung-oven-card/samsung-oven-card.js`
+- `samsung-dishwasher-card/samsung-dishwasher-card.js`
+- `samsung-washer-card/samsung-washer-card.js`
+- `samsung-fridge-card/samsung-fridge-card.js`
+
+Ogni cartella contiene un README con YAML di esempio.
+
+## Note Forno
+
+Per il modello forno usato durante lo sviluppo sono esposte solo queste modalità:
+
+- `Convezione` -> `Bake`
+- `Ventola convenzionale` -> `FanConventional`
+- `Grill Grande` -> `Broil`
+- `Grill ventilato` -> `ConvectionBroil`
+- `Riscaldamento superiore+convezione` -> `ConvectionRoast`
+- `Riscaldamento inferiore+convezione` -> `ConvectionBake`
+- `Cottura intensiva` -> `SlimStrong`
+- `Rosolatura` -> `BottomHeat`
+
+`FanConventional` usa il comando SmartThings batch moderno (`setOvenMode`, `setOvenSetpoint`, `setOperationTime`, `start`). Le altre modalità usano il payload legacy `ovenOperatingState/start` perché su questo forno risultano più affidabili.
+
+## Struttura Codice
+
+- `custom_components/samsung_custom/api.py`: client SmartThings REST, refresh OAuth e logging payload.
+- `custom_components/samsung_custom/coordinator.py`: aggiornamento periodico dati dispositivi.
+- `custom_components/samsung_custom/entity.py`: helper condivisi per componenti, stati, device info e refresh post-comando.
+- `custom_components/samsung_custom/oven.py`: logica specifica forno e costruzione payload start.
+- `custom_components/samsung_custom/{sensor,binary_sensor,switch,select,number,button,light}.py`: platform Home Assistant.
+
+## Modalità Remota
+
+Per avviare lavastoviglie, lavatrice o forno da Home Assistant, SmartThings richiede spesso l'abilitazione fisica di **Smart Control** o **Remote Control** sul pannello del dispositivo. Dopo l'apertura dello sportello, molti elettrodomestici Samsung disabilitano l'avvio remoto per sicurezza.

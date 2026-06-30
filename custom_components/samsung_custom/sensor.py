@@ -8,6 +8,13 @@ from .const import (
     CAP_WASHER_OPERATING_STATE, CAP_DRYER_OPERATING_STATE, CAP_OVEN_OPERATING_STATE,
     CAP_TEMPERATURE_MEASUREMENT, OVEN_JOB_STATE_MAP, DISHWASHER_JOB_STATE_MAP
 )
+from .entity import (
+    capability_value,
+    component_prefix,
+    component_status,
+    iter_component_statuses,
+    samsung_device_info,
+)
 
 @dataclass(kw_only=True)
 class SamsungSensorEntityDescription(SensorEntityDescription):
@@ -107,17 +114,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     sensors = []
     
-    for device_id, device_data in coordinator.data.items():
-        components = device_data.get("status", {})
-        device_info = device_data.get("device_info", {})
-        device_name = device_info.get("name", "Samsung Appliance")
-        
-        for comp_name, status in components.items():
-            name_prefix = f"{device_name} ({comp_name})" if comp_name != "main" else device_name
-            
-            for description in SENSOR_TYPES:
-                if description.capability in status:
-                    sensors.append(GenericStateSensor(coordinator, device_id, comp_name, name_prefix, description))
+    for device_id, component, status, name_prefix in iter_component_statuses(coordinator):
+        for description in SENSOR_TYPES:
+            if description.capability in status:
+                sensors.append(GenericStateSensor(coordinator, device_id, component, name_prefix, description))
 
     async_add_entities(sensors)
 
@@ -134,7 +134,7 @@ class GenericStateSensor(CoordinatorEntity, SensorEntity):
         self._component = component
         self._device_name = device_name
         
-        comp_prefix = f"_{component}" if component != "main" else ""
+        comp_prefix = component_prefix(component)
         self._attr_unique_id = f"{device_id}{comp_prefix}_{description.capability}_{description.attribute}"
         
         # Add a prefix to the name based on the component if not main
@@ -148,23 +148,20 @@ class GenericStateSensor(CoordinatorEntity, SensorEntity):
     @property
     def device_info(self):
         """Return device info."""
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
-            "name": self._device_name.replace(f" ({self._component})", ""),
-            "manufacturer": "Samsung",
-        }
+        return samsung_device_info(self._device_id, self._device_name, self._component)
 
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if not data:
             return None
-            
-        val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
-        
-        if isinstance(val, dict) and "value" in val:
-            val = val.get("value")
+
+        val = capability_value(
+            data,
+            self.entity_description.capability,
+            self.entity_description.attribute,
+        )
             
         # Translate based on attribute
         if self.entity_description.attribute == "ovenJobState" and val in OVEN_JOB_STATE_MAP:

@@ -1,11 +1,19 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_ACCESS_TOKEN, CONF_REFRESH_TOKEN
 from .api import SmartThingsApi
+from .const import (
+    CONF_ACCESS_TOKEN,
+    CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
+    CONF_REFRESH_TOKEN,
+    DOMAIN,
+)
 from .coordinator import SmartThingsCoordinator
 
-PLATFORMS = ["sensor", "switch", "select", "button", "binary_sensor", "number", "light"]
+PLATFORMS = ("sensor", "switch", "select", "button", "binary_sensor", "number", "light")
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Samsung Custom Appliances from a config entry."""
@@ -22,7 +30,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         new_data[CONF_REFRESH_TOKEN] = new_refresh
         hass.config_entries.async_update_entry(entry, data=new_data)
 
-    api = SmartThingsApi(client_id, client_secret, access_token, refresh_token, save_tokens)
+    session = async_get_clientsession(hass)
+    api = SmartThingsApi(
+        client_id,
+        client_secret,
+        access_token,
+        refresh_token,
+        session,
+        save_tokens,
+    )
     coordinator = SmartThingsCoordinator(hass, api)
 
     await coordinator.async_init()
@@ -34,10 +50,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     return True
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data[DOMAIN].pop(entry.entry_id, None)
 
     return unload_ok

@@ -1,9 +1,20 @@
 from dataclasses import dataclass
 
-from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorEntityDescription, BinarySensorDeviceClass
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+    BinarySensorEntityDescription,
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CAP_OVEN_DOOR, DOMAIN
+from .entity import (
+    capability_value,
+    component_prefix,
+    component_status,
+    iter_component_statuses,
+    samsung_device_info,
+)
 
 @dataclass(kw_only=True)
 class SamsungBinarySensorEntityDescription(BinarySensorEntityDescription):
@@ -35,17 +46,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     binary_sensors = []
     
-    for device_id, device_data in coordinator.data.items():
-        components = device_data.get("status", {})
-        device_info = device_data.get("device_info", {})
-        device_name = device_info.get("name", "Samsung Appliance")
-        
-        for comp_name, status in components.items():
-            name_prefix = f"{device_name} ({comp_name})" if comp_name != "main" else device_name
-
-            for description in BINARY_SENSOR_TYPES:
-                if description.capability in status:
-                    binary_sensors.append(GenericBinarySensor(coordinator, device_id, comp_name, name_prefix, description))
+    for device_id, component, status, name_prefix in iter_component_statuses(coordinator):
+        for description in BINARY_SENSOR_TYPES:
+            if description.capability in status:
+                binary_sensors.append(GenericBinarySensor(coordinator, device_id, component, name_prefix, description))
 
     async_add_entities(binary_sensors)
 
@@ -54,7 +58,14 @@ class GenericBinarySensor(CoordinatorEntity, BinarySensorEntity):
     """Generic binary sensor."""
     entity_description: SamsungBinarySensorEntityDescription
 
-    def __init__(self, coordinator, device_id, component, device_name, description: SamsungBinarySensorEntityDescription):
+    def __init__(
+        self,
+        coordinator,
+        device_id,
+        component,
+        device_name,
+        description: SamsungBinarySensorEntityDescription,
+    ):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.entity_description = description
@@ -62,7 +73,7 @@ class GenericBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._component = component
         self._device_name = device_name
         
-        comp_prefix = f"_{component}" if component != "main" else ""
+        comp_prefix = component_prefix(component)
         self._attr_unique_id = f"{device_id}{comp_prefix}_{description.capability}"
         
         # Override name dynamically based on component for doors
@@ -81,20 +92,20 @@ class GenericBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self):
         """Return device info."""
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
-            "name": self._device_name.replace(f" ({self._component})", ""),
-            "manufacturer": "Samsung",
-        }
+        return samsung_device_info(self._device_id, self._device_name, self._component)
 
     @property
     def is_on(self):
         """Return true if the binary sensor is on."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if not data:
             return None
-        
-        val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
+
+        val = capability_value(
+            data,
+            self.entity_description.capability,
+            self.entity_description.attribute,
+        )
         
         if self.entity_description.capability == "contactSensor":
             return val == "open"
