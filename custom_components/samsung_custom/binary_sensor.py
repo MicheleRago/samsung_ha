@@ -1,12 +1,9 @@
-import logging
 from dataclasses import dataclass
 
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorEntityDescription, BinarySensorDeviceClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
-
-_LOGGER = logging.getLogger(__name__)
+from .const import CAP_OVEN_DOOR, DOMAIN
 
 @dataclass(kw_only=True)
 class SamsungBinarySensorEntityDescription(BinarySensorEntityDescription):
@@ -25,7 +22,7 @@ BINARY_SENSOR_TYPES: tuple[SamsungBinarySensorEntityDescription, ...] = (
     SamsungBinarySensorEntityDescription(
         key="oven_door",
         name="Oven Door",
-        capability="samsungce.doorState",
+        capability=CAP_OVEN_DOOR,
         attribute="doorState",
         device_class=BinarySensorDeviceClass.DOOR,
     ),

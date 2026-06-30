@@ -6,8 +6,9 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import (
     DOMAIN, CAP_OPERATING_STATE, CAP_WASHER_OPERATING_STATE, 
     CAP_DRYER_OPERATING_STATE, CAP_OVEN_OPERATING_STATE,
-    OVEN_OPERATING_STATE_CAPABILITIES, normalize_oven_mode_code
+    OVEN_OPERATING_STATE_CAPABILITIES
 )
+from .oven import oven_start_commands, oven_start_settings
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,56 +74,37 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
         """Handle the button press."""
         import asyncio
         if self._capability == CAP_OVEN_OPERATING_STATE:
-            # For oven, use standard ovenOperatingState capability instead of custom samsungce
-            cap = "ovenOperatingState"
+            cap = CAP_OVEN_OPERATING_STATE
             cmd = "start" if self._command_arg == "run" else self._command_arg
-            
-            args = []
+
             if cmd == "start":
-                # Get current mode and temp to send with start command
-                data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
-                mode = data.get("samsungce.ovenMode", {}).get("ovenMode", {}).get("value", "Bake")
-                temp = data.get("ovenSetpoint", {}).get("ovenSetpoint", {}).get("value", 200)
-                cook_time = 30.0
-                remote_enabled = data.get("remoteControlStatus", {}).get("remoteControlEnabled", {}).get("value")
-                door_state = data.get("samsungce.doorState", {}).get("doorState", {}).get("value")
-                
-                # Check for locally cached user selections before the API fully updates
-                cache_key = f"{self._device_id}_pending_oven_state"
-                if cache_key in self.coordinator.hass.data[DOMAIN]:
-                    mode = self.coordinator.hass.data[DOMAIN][cache_key].get("mode", mode)
-                    temp = self.coordinator.hass.data[DOMAIN][cache_key].get("temp", temp)
-                    cook_time = self.coordinator.hass.data[DOMAIN][cache_key].get("cook_time", cook_time)
-                mode = normalize_oven_mode_code(mode)
-                    
-                # Ensure time and temp are strictly integers to avoid API Error 422 (integer expected)
-                api_temp = int(float(temp))
-                api_cook_time = int(float(cook_time) * 60)
-                
-                # Pass mode, cookTime in seconds (e.g. 1800 for 30 mins), and temperature
-                # Many Samsung ovens silently ignore the start command if cookTime is 0
-                args = [mode, api_cook_time, api_temp]
-                if str(remote_enabled).lower() in ("false", "off", "disabled"):
+                settings = oven_start_settings(
+                    self.coordinator.hass,
+                    self.coordinator,
+                    self._device_id,
+                    self._component,
+                )
+                commands = oven_start_commands(self._component, settings)
+
+                if str(settings.remote_enabled).lower() in ("false", "off", "disabled"):
                     _LOGGER.warning(
                         "Samsung oven remote control is disabled; the start command may be ignored"
                     )
-                if door_state == "open":
+                if settings.door_state == "open":
                     _LOGGER.warning(
                         "Samsung oven door is open; the start command may be ignored"
                     )
                 _LOGGER.error(
-                    "OVEN SMARTTHINGS REQUEST: device_id=%s component=%s capability=%s command=%s mode=%s cook_time=%ss temp=%s arguments=%s",
+                    "OVEN SMARTTHINGS REQUEST: device_id=%s mode=%s operation_time=%s temp=%s payload=%s",
                     self._device_id,
-                    self._component,
-                    cap,
-                    cmd,
-                    mode,
-                    api_cook_time,
-                    api_temp,
-                    json.dumps(args, ensure_ascii=False),
+                    settings.mode,
+                    settings.operation_time,
+                    settings.temperature,
+                    json.dumps({"commands": commands}, ensure_ascii=False),
                 )
-                
-            await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd, args)
+                await self.coordinator.api.execute_commands(self._device_id, commands)
+            else:
+                await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd)
         else:
             await self.coordinator.api.execute_command(self._device_id, self._component, self._capability, "setMachineState", [self._command_arg])
         await asyncio.sleep(2)

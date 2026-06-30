@@ -1,12 +1,9 @@
-import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_ACCESS_TOKEN, CONF_REFRESH_TOKEN
 from .api import SmartThingsApi
 from .coordinator import SmartThingsCoordinator
-
-_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor", "switch", "select", "button", "binary_sensor", "number", "light"]
 

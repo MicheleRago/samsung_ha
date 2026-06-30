@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
@@ -6,17 +5,17 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     DOMAIN,
+    CAP_FREEZER_CONVERT_MODE,
+    CAP_OVEN_MODE,
     CAP_WASHING_COURSE,
     CAP_WASHER_COURSE,
     CAP_DRYER_COURSE,
     SAMSUNG_WASHER_CYCLES,
     OVEN_MODE_MAP,
     OVEN_SELECT_MODES,
-    get_oven_operating_state,
     normalize_oven_mode_code,
 )
-
-_LOGGER = logging.getLogger(__name__)
+from .oven import cached_oven_setting, cache_oven_setting, component_status, oven_is_waiting_for_start
 
 @dataclass(kw_only=True)
 class SamsungSelectEntityDescription(SelectEntityDescription):
@@ -58,7 +57,7 @@ SELECT_TYPES: tuple[SamsungSelectEntityDescription, ...] = (
     SamsungSelectEntityDescription(
         key="freezer_mode",
         name="Freezer Mode",
-        capability="samsungce.freezerConvertMode",
+        capability=CAP_FREEZER_CONVERT_MODE,
         attribute="freezerConvertMode",
         options_attribute="supportedFreezerConvertModes",
         command="setFreezerConvertMode",
@@ -67,19 +66,10 @@ SELECT_TYPES: tuple[SamsungSelectEntityDescription, ...] = (
     SamsungSelectEntityDescription(
         key="oven_mode",
         name="Oven Mode",
-        capability="samsungce.ovenMode",
+        capability=CAP_OVEN_MODE,
         attribute="ovenMode",
         options_attribute="supportedOvenModes",
         command="setOvenMode",
-        is_course=False,
-    ),
-    SamsungSelectEntityDescription(
-        key="microwave_power",
-        name="Microwave Power",
-        capability="samsungce.microwavePower",
-        attribute="powerLevel",
-        options_attribute="supportedPowerLevels",
-        command="setPowerLevel",
         is_course=False,
     ),
 )
@@ -135,7 +125,7 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         if not code:
             return code
 
-        if self.entity_description.capability == "samsungce.ovenMode":
+        if self.entity_description.capability == CAP_OVEN_MODE:
             return OVEN_MODE_MAP.get(code, code)
 
         if not self.entity_description.is_course:
@@ -151,7 +141,7 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
 
     def _oven_supported_mode_codes(self):
         """Return device-supported oven mode codes, if SmartThings exposes them."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         supported = data.get(self.entity_description.capability, {}).get(self.entity_description.options_attribute, {}).get("value")
         if not isinstance(supported, list):
             return []
@@ -168,7 +158,7 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
 
     def _reverse_translate(self, name):
         """Map name back to code if possible, otherwise return name."""
-        if not self.entity_description.is_course and self.entity_description.capability != "samsungce.ovenMode":
+        if not self.entity_description.is_course and self.entity_description.capability != CAP_OVEN_MODE:
             return name
             
         if self.entity_description.capability in (CAP_WASHER_COURSE, CAP_DRYER_COURSE):
@@ -178,7 +168,7 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
             if name.startswith("Cycle "):
                 return name.replace("Cycle ", "")
         
-        if self.entity_description.capability == "samsungce.ovenMode":
+        if self.entity_description.capability == CAP_OVEN_MODE:
             alias_code = normalize_oven_mode_code(name)
             if alias_code != name:
                 return alias_code
@@ -198,20 +188,14 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
     @property
     def current_option(self):
         """Return the current selected option."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if not data:
             return None
         # If it's ovenMode, check local cache first (if oven is off)
-        if self.entity_description.capability == "samsungce.ovenMode":
-            cache_key = f"{self._device_id}_pending_oven_state"
-            if cache_key in self.coordinator.hass.data.get(DOMAIN, {}):
-                cached_mode = self.coordinator.hass.data[DOMAIN][cache_key].get("mode")
-                if cached_mode is not None:
-                    oven_state = get_oven_operating_state(data)
-                    machine_state = oven_state.get("machineState", {}).get("value")
-                    job_state = oven_state.get("ovenJobState", {}).get("value")
-                    if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
-                        return self._translate_code(cached_mode)
+        if self.entity_description.capability == CAP_OVEN_MODE:
+            cached_mode = cached_oven_setting(self.coordinator.hass, self._device_id, "mode")
+            if cached_mode is not None and oven_is_waiting_for_start(data):
+                return self._translate_code(cached_mode)
 
         val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
         return self._translate_code(val)
@@ -219,13 +203,13 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
     @property
     def options(self):
         """Return a set of selectable options."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if not data:
             return []
         
         # For ovenMode, prefer the device-reported modes; use known Samsung
         # oven modes only when SmartThings does not expose supportedOvenModes.
-        if self.entity_description.capability == "samsungce.ovenMode":
+        if self.entity_description.capability == CAP_OVEN_MODE:
             mode_codes = self._oven_supported_mode_codes() or list(OVEN_SELECT_MODES)
             if not mode_codes:
                 mode_codes = list(OVEN_SELECT_MODES)
@@ -253,11 +237,6 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         
         options = [self._translate_code(opt) for opt in (supported or [])]
         
-        # Fallbacks for empty supported arrays
-        if not options:
-            if self.entity_description.capability == "samsungce.microwavePower":
-                options = ["100W", "300W", "450W", "600W", "700W", "800W", "850W", "900W"]
-
         current = self.current_option
         if current and current not in options:
             options.append(current)
@@ -270,19 +249,13 @@ class GenericSelect(CoordinatorEntity, SelectEntity):
         code = self._reverse_translate(option)
         
         # Cache the selected mode for the start button
-        if self.entity_description.capability == "samsungce.ovenMode":
-            cache_key = f"{self._device_id}_pending_oven_state"
-            if cache_key not in self.hass.data[DOMAIN]:
-                self.hass.data[DOMAIN][cache_key] = {}
+        if self.entity_description.capability == CAP_OVEN_MODE:
             code = normalize_oven_mode_code(code)
-            self.hass.data[DOMAIN][cache_key]["mode"] = code
+            cache_oven_setting(self.hass, self._device_id, "mode", code)
             
             # Check if oven is running. If not, don't send the API command yet.
-            data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
-            oven_state = get_oven_operating_state(data)
-            machine_state = oven_state.get("machineState", {}).get("value")
-            job_state = oven_state.get("ovenJobState", {}).get("value")
-            if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
+            data = component_status(self.coordinator, self._device_id, self._component)
+            if oven_is_waiting_for_start(data):
                 # Just cache it and write state
                 self.async_write_ha_state()
                 return

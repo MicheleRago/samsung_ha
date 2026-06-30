@@ -3,7 +3,6 @@ import voluptuous as vol
 import aiohttp
 import urllib.parse
 from homeassistant import config_entries
-from homeassistant.core import callback
 
 from .const import DOMAIN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_ACCESS_TOKEN, CONF_REFRESH_TOKEN
 

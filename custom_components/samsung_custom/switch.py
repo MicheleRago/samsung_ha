@@ -1,4 +1,3 @@
-import logging
 import asyncio
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -6,9 +5,15 @@ from typing import Any, Optional
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, CAP_SWITCH, CAP_WASHING_OPTIONS
-
-_LOGGER = logging.getLogger(__name__)
+from .const import (
+    CAP_AUTO_OPEN_DOOR,
+    CAP_KIDS_LOCK,
+    CAP_POWER_COOL,
+    CAP_POWER_FREEZE,
+    CAP_SWITCH,
+    CAP_WASHING_OPTIONS,
+    DOMAIN,
+)
 
 @dataclass(kw_only=True)
 class SamsungSwitchEntityDescription(SwitchEntityDescription):
@@ -57,7 +62,7 @@ SWITCH_TYPES: tuple[SamsungSwitchEntityDescription, ...] = (
         key="auto_open_door",
         name="Auto Release Dry",
         icon="mdi:door-open",
-        capability="samsungce.autoOpenDoor",
+        capability=CAP_AUTO_OPEN_DOOR,
         attribute="autoOpenDoor",
         command_on="setAutoOpenDoor",
         on_value="on",
@@ -67,7 +72,7 @@ SWITCH_TYPES: tuple[SamsungSwitchEntityDescription, ...] = (
         key="power_cool",
         name="Power Cool",
         icon="mdi:snowflake-alert",
-        capability="samsungce.powerCool",
+        capability=CAP_POWER_COOL,
         attribute="activated",
         command_on="activate",
         command_off="deactivate",
@@ -80,7 +85,7 @@ SWITCH_TYPES: tuple[SamsungSwitchEntityDescription, ...] = (
         key="power_freeze",
         name="Power Freeze",
         icon="mdi:snowflake-alert",
-        capability="samsungce.powerFreeze",
+        capability=CAP_POWER_FREEZE,
         attribute="activated",
         command_on="activate",
         command_off="deactivate",
@@ -93,7 +98,7 @@ SWITCH_TYPES: tuple[SamsungSwitchEntityDescription, ...] = (
         key="fridge_power_freeze",
         name="Power Freeze",
         icon="mdi:snowflake-melt",
-        capability="samsungce.powerFreeze",
+        capability=CAP_POWER_FREEZE,
         attribute="powerFreeze",
         command_on="setPowerFreeze",
         on_value="on",
@@ -106,7 +111,7 @@ SWITCH_TYPES: tuple[SamsungSwitchEntityDescription, ...] = (
         key="kids_lock",
         name="Child Lock",
         icon="mdi:lock",
-        capability="samsungce.kidsLock",
+        capability=CAP_KIDS_LOCK,
         attribute="lockState",
         command_on="setLockState",
         on_value="locked",

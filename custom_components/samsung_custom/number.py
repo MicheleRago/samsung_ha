@@ -1,19 +1,21 @@
-import logging
 from dataclasses import dataclass
-from typing import Optional
 
 from homeassistant.components.number import NumberEntity, NumberEntityDescription, NumberDeviceClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     DOMAIN,
-    CAP_OVEN_OPERATING_STATE,
-    CAP_OVEN_OPERATING_STATE_STANDARD,
+    CAP_OVEN_SETPOINT,
     CAP_THERMOSTAT_COOLING,
-    get_oven_operating_state,
+    OVEN_OPERATING_STATE_CAPABILITIES,
 )
-
-_LOGGER = logging.getLogger(__name__)
+from .oven import (
+    DEFAULT_OVEN_COOK_TIME,
+    cached_oven_setting,
+    cache_oven_setting,
+    component_status,
+    oven_is_waiting_for_start,
+)
 
 @dataclass(kw_only=True)
 class SamsungNumberEntityDescription(NumberEntityDescription):
@@ -44,7 +46,7 @@ NUMBER_TYPES: tuple[SamsungNumberEntityDescription, ...] = (
         key="oven_setpoint",
         name="Oven Target Temperature",
         icon="mdi:thermometer",
-        capability="ovenSetpoint",
+        capability=CAP_OVEN_SETPOINT,
         attribute="ovenSetpoint",
         command="setOvenSetpoint",
         device_class=NumberDeviceClass.TEMPERATURE,
@@ -74,7 +76,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 if description.capability in status:
                     numbers.append(GenericNumber(coordinator, device_id, comp_name, name_prefix, description))
                     
-            if CAP_OVEN_OPERATING_STATE in status or CAP_OVEN_OPERATING_STATE_STANDARD in status:
+            if any(capability in status for capability in OVEN_OPERATING_STATE_CAPABILITIES):
                 numbers.append(VirtualCookTimeNumber(coordinator, device_id, comp_name, name_prefix))
 
     async_add_entities(numbers)
@@ -122,7 +124,7 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
     @property
     def native_min_value(self) -> float:
         """Return the minimum value."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if data:
             range_data = data.get(self.entity_description.capability, {}).get("coolingSetpointRange", {}).get("value")
             if isinstance(range_data, list) and len(range_data) >= 1:
@@ -140,7 +142,7 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
     @property
     def native_max_value(self) -> float:
         """Return the maximum value."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if data:
             range_data = data.get(self.entity_description.capability, {}).get("coolingSetpointRange", {}).get("value")
             if isinstance(range_data, list) and len(range_data) >= 2:
@@ -158,21 +160,15 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
     @property
     def native_value(self):
         """Return the state of the number."""
-        data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
+        data = component_status(self.coordinator, self._device_id, self._component)
         if not data:
             return None
         
         # If it's ovenSetpoint, check local cache first (if oven is off)
-        if self.entity_description.capability == "ovenSetpoint":
-            cache_key = f"{self._device_id}_pending_oven_state"
-            if cache_key in self.coordinator.hass.data.get(DOMAIN, {}):
-                cached_temp = self.coordinator.hass.data[DOMAIN][cache_key].get("temp")
-                if cached_temp is not None:
-                    oven_state = get_oven_operating_state(data)
-                    machine_state = oven_state.get("machineState", {}).get("value")
-                    job_state = oven_state.get("ovenJobState", {}).get("value")
-                    if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
-                        return float(cached_temp)
+        if self.entity_description.capability == CAP_OVEN_SETPOINT:
+            cached_temp = cached_oven_setting(self.coordinator.hass, self._device_id, "temp")
+            if cached_temp is not None and oven_is_waiting_for_start(data):
+                return float(cached_temp)
 
         val = data.get(self.entity_description.capability, {}).get(self.entity_description.attribute, {}).get("value")
         
@@ -189,18 +185,12 @@ class GenericNumber(CoordinatorEntity, NumberEntity):
         import asyncio
         
         # Cache the selected temp for the start button
-        if self.entity_description.capability == "ovenSetpoint":
-            cache_key = f"{self._device_id}_pending_oven_state"
-            if cache_key not in self.hass.data[DOMAIN]:
-                self.hass.data[DOMAIN][cache_key] = {}
-            self.hass.data[DOMAIN][cache_key]["temp"] = value
+        if self.entity_description.capability == CAP_OVEN_SETPOINT:
+            cache_oven_setting(self.hass, self._device_id, "temp", value)
             
             # Check if oven is running. If not, don't send the API command yet.
-            data = self.coordinator.data.get(self._device_id, {}).get("status", {}).get(self._component, {})
-            oven_state = get_oven_operating_state(data)
-            machine_state = oven_state.get("machineState", {}).get("value")
-            job_state = oven_state.get("ovenJobState", {}).get("value")
-            if machine_state not in ["running", "paused"] and job_state in ["ready", "finished", None]:
+            data = component_status(self.coordinator, self._device_id, self._component)
+            if oven_is_waiting_for_start(data):
                 # Just cache it and write state
                 self.async_write_ha_state()
                 return
@@ -244,15 +234,9 @@ class VirtualCookTimeNumber(CoordinatorEntity, NumberEntity):
     @property
     def native_value(self):
         """Return the state of the number."""
-        cache_key = f"{self._device_id}_pending_oven_state"
-        if cache_key in self.hass.data.get(DOMAIN, {}):
-            return self.hass.data[DOMAIN][cache_key].get("cook_time", 30.0)
-        return 30.0
+        return cached_oven_setting(self.hass, self._device_id, "cook_time", DEFAULT_OVEN_COOK_TIME)
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value in local cache."""
-        cache_key = f"{self._device_id}_pending_oven_state"
-        if cache_key not in self.hass.data[DOMAIN]:
-            self.hass.data[DOMAIN][cache_key] = {}
-        self.hass.data[DOMAIN][cache_key]["cook_time"] = value
+        cache_oven_setting(self.hass, self._device_id, "cook_time", value)
         self.async_write_ha_state()

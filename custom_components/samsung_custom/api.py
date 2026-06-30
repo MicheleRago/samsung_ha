@@ -1,7 +1,7 @@
 import logging
 import aiohttp
 import json
-from typing import Any, Dict
+from typing import Any
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,19 +20,13 @@ class SmartThingsApi:
         self.save_tokens_callback = save_tokens_callback
 
     @property
-    def headers(self) -> Dict[str, str]:
+    def headers(self) -> dict[str, str]:
         """Return the headers for API requests."""
         return {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
-
-    async def async_refresh_token_if_needed(self) -> None:
-        """Check token validity or forcefully refresh it.
-        SmartThings API will return 401 if expired. We will handle the 401 directly in the methods.
-        """
-        pass # The refresh happens gracefully on 401
 
     async def _do_refresh_token(self) -> None:
         """Perform the actual token refresh."""
@@ -70,35 +64,27 @@ class SmartThingsApi:
                     await self._do_refresh_token()
                     kwargs["headers"] = self.headers
                     async with session.request(method, url, **kwargs) as retry_response:
-                        retry_text = await retry_response.text()
-                        if method != "GET":
-                            _LOGGER.warning(
-                                "SmartThings response: %s %s status=%s body=%s",
-                                method,
-                                url,
-                                retry_response.status,
-                                retry_text,
-                            )
-                        retry_response.raise_for_status()
-                        if retry_response.status == 204 or not retry_text:
-                            return None
-                        return json.loads(retry_text)
-                
-                text = await response.text()
-                if method != "GET":
-                    _LOGGER.warning(
-                        "SmartThings response: %s %s status=%s body=%s",
-                        method,
-                        url,
-                        response.status,
-                        text,
-                    )
-                if response.status >= 400:
-                    _LOGGER.error(f"API Error {response.status}: {text}")
-                response.raise_for_status()
-                if response.status == 204 or not text:
-                    return None
-                return json.loads(text)
+                        return await self._handle_response(method, url, retry_response)
+
+                return await self._handle_response(method, url, response)
+
+    async def _handle_response(self, method: str, url: str, response: aiohttp.ClientResponse) -> Any:
+        """Log and parse a SmartThings response."""
+        text = await response.text()
+        if method != "GET":
+            _LOGGER.warning(
+                "SmartThings response: %s %s status=%s body=%s",
+                method,
+                url,
+                response.status,
+                text,
+            )
+        if response.status >= 400:
+            _LOGGER.error("API Error %s: %s", response.status, text)
+        response.raise_for_status()
+        if response.status == 204 or not text:
+            return None
+        return json.loads(text)
 
     async def get_devices(self) -> list:
         """Get all devices."""
@@ -106,7 +92,7 @@ class SmartThingsApi:
         data = await self._request("GET", url)
         return data.get("items", [])
 
-    async def get_device_status(self, device_id: str) -> Dict[str, Any]:
+    async def get_device_status(self, device_id: str) -> dict[str, Any]:
         """Get the full status of the device."""
         url = f"{BASE_URL}/devices/{device_id}/status"
         data = await self._request("GET", url)
@@ -114,19 +100,29 @@ class SmartThingsApi:
 
     async def execute_command(self, device_id: str, component: str, capability: str, command: str, arguments: list = None) -> None:
         """Execute a command on the device."""
-        url = f"{BASE_URL}/devices/{device_id}/commands"
-        
         if arguments is not None and not isinstance(arguments, list):
             arguments = [arguments]
-            
-        payload = [
-            {
-                "component": component,
-                "capability": capability,
-                "command": command,
-                "arguments": arguments or []
-            }
-        ]
+
+        command_payload = {
+            "component": component,
+            "capability": capability,
+            "command": command,
+            "arguments": arguments or []
+        }
+
+        await self.execute_commands(device_id, [command_payload])
+        _LOGGER.debug(
+            "Command executed successfully: %s.%s.%s(%s)",
+            component,
+            capability,
+            command,
+            arguments,
+        )
+
+    async def execute_commands(self, device_id: str, commands: list[dict[str, Any]]) -> None:
+        """Execute one or more SmartThings commands on the device."""
+        url = f"{BASE_URL}/devices/{device_id}/commands"
+        payload = {"commands": commands}
         
         _LOGGER.warning(
             "SmartThings request: POST %s payload=%s",
@@ -135,4 +131,4 @@ class SmartThingsApi:
         )
         
         await self._request("POST", url, json=payload)
-        _LOGGER.debug(f"Command executed successfully: {component}.{capability}.{command}({arguments})")
+        _LOGGER.debug("Commands executed successfully: %s", json.dumps(commands, ensure_ascii=False))

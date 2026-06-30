@@ -1,6 +1,4 @@
-import logging
 from dataclasses import dataclass
-from typing import Optional
 
 from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -8,10 +6,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import (
     DOMAIN, CAP_OPERATING_STATE, CAP_DISHWASHER_OPERATION, CAP_REMOTE_CONTROL,
     CAP_WASHER_OPERATING_STATE, CAP_DRYER_OPERATING_STATE, CAP_OVEN_OPERATING_STATE,
-    CAP_TEMPERATURE_MEASUREMENT, OVEN_MODE_MAP, OVEN_JOB_STATE_MAP, DISHWASHER_JOB_STATE_MAP
+    CAP_TEMPERATURE_MEASUREMENT, OVEN_JOB_STATE_MAP, DISHWASHER_JOB_STATE_MAP
 )
-
-_LOGGER = logging.getLogger(__name__)
 
 @dataclass(kw_only=True)
 class SamsungSensorEntityDescription(SensorEntityDescription):
@@ -175,9 +171,6 @@ class GenericStateSensor(CoordinatorEntity, SensorEntity):
             return OVEN_JOB_STATE_MAP[val]
         if self.entity_description.attribute == "dishwasherJobState" and val in DISHWASHER_JOB_STATE_MAP:
             return DISHWASHER_JOB_STATE_MAP[val]
-        if self.entity_description.attribute == "ovenMode" and val in OVEN_MODE_MAP:
-            return OVEN_MODE_MAP[val]
-            
         if self.entity_description.device_class == "timestamp" and val:
             from homeassistant.util import dt as dt_util
             try:

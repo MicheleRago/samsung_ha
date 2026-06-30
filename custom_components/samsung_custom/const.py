@@ -33,10 +33,13 @@ CAP_THERMOSTAT_COOLING = "thermostatCoolingSetpoint"
 # Oven specific capabilities
 CAP_OVEN_MODE = "samsungce.ovenMode"
 CAP_OVEN_SETPOINT = "ovenSetpoint"
-CAP_MICROWAVE_POWER = "samsungce.microwavePower"
 CAP_OVEN_DOOR = "samsungce.doorState"
 CAP_OVEN_LAMP = "samsungce.lamp"
 CAP_KIDS_LOCK = "samsungce.kidsLock"
+CAP_FREEZER_CONVERT_MODE = "samsungce.freezerConvertMode"
+CAP_AUTO_OPEN_DOOR = "samsungce.autoOpenDoor"
+CAP_POWER_COOL = "samsungce.powerCool"
+CAP_POWER_FREEZE = "samsungce.powerFreeze"
 
 SAMSUNG_WASHER_CYCLES = {
     "01": "Cotton",
@@ -75,36 +78,19 @@ SAMSUNG_WASHER_CYCLES = {
 
 OVEN_MODE_MAP = {
     # Labels aligned with the SmartThings app for this oven model.
-    "FanConventional": "Ventola convenzionale",
     "heating": "Convenzione",
     "Conventional": "Convenzione",
     "Bake": "Convenzione",
+    "FanConventional": "Ventola convenzionale",
     "Broil": "Grill Grande",
     "ConvectionBroil": "Grill ventilato",
     "ConvectionRoast": "Riscaldamento superiore+convenzione",
     "ConvectionBake": "Riscaldamento inferiore+convenzione",
     "SlimStrong": "Cottura intensiva",
     "BottomHeat": "Rosolatura",
-    "KeepWarm": "Mantenimento caldo",
-    "BreadProof": "Lievitazione",
-    "AirFryer": "Air Fryer",
-    "SelfClean": "Autopulizia",
-    "SteamClean": "Pulizia a vapore",
-    
-    # Altre modalità per sicurezza
-    "SteamCook": "Cottura a Vapore",
-    "MWplusHotBlast2": "Microonde + Hot Blast 2",
-    "SlimMiddle": "Slim Middle",
-    "SlowCook": "Cottura Lenta",
-    "Proof": "Lievitazione",
-    "Dehydrate": "Disidratazione",
-    "Others": "Altro",
-    "StrongSteam": "Vapore Forte",
-    "Descale": "Decalcificazione",
-    "Rinse": "Risciacquo"
 }
 
-OVEN_DEFAULT_MODES = (
+OVEN_SELECT_MODES = (
     "Conventional",
     "FanConventional",
     "Broil",
@@ -115,17 +101,6 @@ OVEN_DEFAULT_MODES = (
     "BottomHeat",
 )
 
-OVEN_EXTRA_MODES = (
-    "KeepWarm",
-    "BreadProof",
-    "AirFryer",
-    "Dehydrate",
-    "SelfClean",
-    "SteamClean",
-)
-
-OVEN_SELECT_MODES = OVEN_DEFAULT_MODES + OVEN_EXTRA_MODES
-
 OVEN_MODE_COMMAND_ALIASES = {
     "heating": "Conventional",
     "Bake": "Conventional",
@@ -134,9 +109,6 @@ OVEN_MODE_COMMAND_ALIASES = {
 OVEN_MODE_NAME_ALIASES = {
     "Convenzione": "Conventional",
     "Convezione": "Conventional",
-    "Forno ventilato": "Conventional",
-    "Ventilato": "Conventional",
-    "Cottura ventilata": "Conventional",
     "Ventola convenzionale": "FanConventional",
     "Ventola convenzionata": "FanConventional",
     "Grill Grande": "Broil",
@@ -151,12 +123,6 @@ OVEN_MODE_NAME_ALIASES = {
     "Riscaldamento inferiore + convezione": "ConvectionBake",
     "Cottura intensiva": "SlimStrong",
     "Rosolatura": "BottomHeat",
-    "Mantenimento caldo": "KeepWarm",
-    "Lievitazione": "BreadProof",
-    "Air Fryer": "AirFryer",
-    "Disidratazione": "Dehydrate",
-    "Autopulizia": "SelfClean",
-    "Pulizia a vapore": "SteamClean",
 }
 
 
