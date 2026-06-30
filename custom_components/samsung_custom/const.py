@@ -78,14 +78,14 @@ SAMSUNG_WASHER_CYCLES = {
 
 OVEN_MODE_MAP = {
     # Labels aligned with the SmartThings app for this oven model.
-    "heating": "Convenzione",
-    "Conventional": "Convenzione",
-    "Bake": "Convenzione",
+    "heating": "Convezione",
+    "Conventional": "Convezione",
+    "Bake": "Convezione",
     "FanConventional": "Ventola convenzionale",
     "Broil": "Grill Grande",
     "ConvectionBroil": "Grill ventilato",
-    "ConvectionRoast": "Riscaldamento superiore+convenzione",
-    "ConvectionBake": "Riscaldamento inferiore+convenzione",
+    "ConvectionRoast": "Riscaldamento superiore+convezione",
+    "ConvectionBake": "Riscaldamento inferiore+convezione",
     "SlimStrong": "Cottura intensiva",
     "BottomHeat": "Rosolatura",
 }
@@ -107,19 +107,14 @@ OVEN_MODE_COMMAND_ALIASES = {
 }
 
 OVEN_MODE_NAME_ALIASES = {
-    "Convenzione": "Bake",
     "Convezione": "Bake",
     "Ventola convenzionale": "FanConventional",
     "Ventola convenzionata": "FanConventional",
     "Grill Grande": "Broil",
     "Grill ventilato": "ConvectionBroil",
-    "Riscaldamento superiore+convenzione": "ConvectionRoast",
     "Riscaldamento superiore+convezione": "ConvectionRoast",
-    "Riscaldamento superiore + convenzione": "ConvectionRoast",
     "Riscaldamento superiore + convezione": "ConvectionRoast",
-    "Riscaldamento inferiore+convenzione": "ConvectionBake",
     "Riscaldamento inferiore+convezione": "ConvectionBake",
-    "Riscaldamento inferiore + convenzione": "ConvectionBake",
     "Riscaldamento inferiore + convezione": "ConvectionBake",
     "Cottura intensiva": "SlimStrong",
     "Rosolatura": "BottomHeat",

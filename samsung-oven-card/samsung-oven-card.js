@@ -1,4 +1,4 @@
-console.info("%c SAMSUNG OVEN CARD %c v1.0.5 is loaded! ", "color: white; background: #ff9800; font-weight: 700;", "color: #ff9800; background: white; font-weight: 700;");
+console.info("%c SAMSUNG OVEN CARD %c v1.0.6 is loaded! ", "color: white; background: #ff9800; font-weight: 700;", "color: #ff9800; background: white; font-weight: 700;");
 
 class SamsungOvenCard extends HTMLElement {
   set hass(hass) {
@@ -301,27 +301,24 @@ class SamsungOvenCard extends HTMLElement {
     }
 
     const UIModeMap = {
-      "heating": "Convenzione",
+      "heating": "Convezione",
       "FanConventional": "Ventola convenzionale",
-      "Bake": "Convenzione",
-      "Conventional": "Convenzione",
+      "Bake": "Convezione",
+      "Conventional": "Convezione",
       "Broil": "Grill Grande",
       "ConvectionBroil": "Grill ventilato",
-      "ConvectionRoast": "Riscaldamento superiore+convenzione",
-      "ConvectionBake": "Riscaldamento inferiore+convenzione",
+      "ConvectionRoast": "Riscaldamento superiore+convezione",
+      "ConvectionBake": "Riscaldamento inferiore+convezione",
       "SlimStrong": "Cottura intensiva",
       "BottomHeat": "Rosolatura",
-      "Convezione": "Convenzione",
       "Ventola convenzionata": "Ventola convenzionale",
-      "Riscaldamento superiore + convenzione": "Riscaldamento superiore+convenzione",
-      "Riscaldamento superiore + convezione": "Riscaldamento superiore+convenzione",
-      "Riscaldamento inferiore + convenzione": "Riscaldamento inferiore+convenzione",
-      "Riscaldamento inferiore + convezione": "Riscaldamento inferiore+convenzione"
+      "Riscaldamento superiore + convezione": "Riscaldamento superiore+convezione",
+      "Riscaldamento inferiore + convezione": "Riscaldamento inferiore+convezione"
     };
 
     const allowedLabels = [
-      "Convenzione", "Ventola convenzionale", "Grill Grande", "Grill ventilato",
-      "Riscaldamento superiore+convenzione", "Riscaldamento inferiore+convenzione",
+      "Convezione", "Ventola convenzionale", "Grill Grande", "Grill ventilato",
+      "Riscaldamento superiore+convezione", "Riscaldamento inferiore+convezione",
       "Cottura intensiva", "Rosolatura"
     ];
 
