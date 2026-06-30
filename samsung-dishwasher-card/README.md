@@ -28,7 +28,6 @@ entities:
   pause_btn: button.lavastoviglie_pause
   stop_btn: button.lavastoviglie_stop
   power: switch.lavastoviglie_power
-  remote_control: sensor.lavastoviglie_remote_control
   door: binary_sensor.lavastoviglie_door
   half_load: switch.lavastoviglie_half_load
   speed_booster: switch.lavastoviglie_speed_booster

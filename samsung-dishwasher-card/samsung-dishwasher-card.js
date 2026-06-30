@@ -1,4 +1,4 @@
-console.info("%c SAMSUNG DISHWASHER CARD %c v1.0.0 is loaded! ", "color: white; background: #00a6a6; font-weight: 700;", "color: #00a6a6; background: white; font-weight: 700;");
+console.info("%c SAMSUNG DISHWASHER CARD %c v1.0.1 is loaded! ", "color: white; background: #00a6a6; font-weight: 700;", "color: #00a6a6; background: white; font-weight: 700;");
 
 class SamsungDishwasherCard extends HTMLElement {
   set hass(hass) {
@@ -20,7 +20,7 @@ class SamsungDishwasherCard extends HTMLElement {
         }
         .hero {
           display: grid;
-          grid-template-columns: 64px 1fr auto;
+          grid-template-columns: 64px 1fr;
           gap: 14px;
           align-items: center;
           margin-bottom: 16px;
@@ -57,23 +57,6 @@ class SamsungDishwasherCard extends HTMLElement {
           font-size: 13px;
           color: var(--secondary-text-color);
           overflow-wrap: anywhere;
-        }
-        .remote {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 34px;
-          height: 34px;
-          border-radius: 8px;
-          color: var(--disabled-text-color, #9e9e9e);
-          background: var(--secondary-background-color, rgba(120, 120, 120, 0.12));
-        }
-        .remote.enabled {
-          color: #2e7d32;
-          background: rgba(46, 125, 50, 0.14);
-        }
-        .remote ha-icon {
-          --mdc-icon-size: 20px;
         }
         .status-line {
           height: 4px;
@@ -190,39 +173,57 @@ class SamsungDishwasherCard extends HTMLElement {
         .actions {
           display: flex;
           justify-content: center;
-          gap: 12px;
-          margin-top: 16px;
+          gap: 16px;
+          margin-top: 24px;
           flex-wrap: wrap;
         }
-        .action-btn {
-          min-width: 82px;
+        .btn-action {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
           border: 0;
-          border-radius: 8px;
-          padding: 10px 12px;
+          background: none;
           color: var(--primary-text-color);
-          background: var(--secondary-background-color, rgba(120, 120, 120, 0.12));
+          cursor: pointer;
           font: inherit;
           font-weight: 600;
-          cursor: pointer;
-          display: inline-flex;
+        }
+        .btn-action .icon-wrap {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          background: var(--secondary-background-color);
+          margin-bottom: 8px;
+          transition: all 0.2s;
         }
-        .action-btn ha-icon {
+        .btn-action .icon-wrap ha-icon {
           --mdc-icon-size: 20px;
         }
-        .action-btn.start {
-          background: #2e7d32;
+        .btn-action:hover .icon-wrap {
+          transform: scale(1.05);
+        }
+        .btn-action:active .icon-wrap {
+          transform: scale(0.95);
+        }
+        .btn-action.start .icon-wrap {
+          background: var(--success-color, #4caf50);
+          color: white;
+          box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        .btn-action.pause .icon-wrap {
+          background: var(--warning-color, #ff9800);
           color: white;
         }
-        .action-btn.pause {
-          background: #f57c00;
+        .btn-action.stop .icon-wrap {
+          background: var(--error-color, #f44336);
           color: white;
+          box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
         }
-        .action-btn.stop {
-          background: #c62828;
-          color: white;
+        .btn-action.stop {
+          color: #f44336;
         }
         .warnings {
           display: grid;
@@ -252,7 +253,7 @@ class SamsungDishwasherCard extends HTMLElement {
             padding: 14px;
           }
           .hero {
-            grid-template-columns: 52px 1fr auto;
+            grid-template-columns: 52px 1fr;
             gap: 10px;
           }
           .hero-icon {
@@ -266,7 +267,7 @@ class SamsungDishwasherCard extends HTMLElement {
           .option-grid {
             grid-template-columns: 1fr;
           }
-          .action-btn {
+          .btn-action {
             flex: 1 1 92px;
           }
         }
@@ -319,7 +320,6 @@ class SamsungDishwasherCard extends HTMLElement {
     const remaining = getState('remaining_time');
     const completion = getState('completion_time');
     const course = getState('course');
-    const remote = getState('remote_control');
     const door = getState('door');
     const power = getState('power');
 
@@ -327,7 +327,6 @@ class SamsungDishwasherCard extends HTMLElement {
     const jobState = this._state(job);
     const remainingValue = this._state(remaining);
     const completionValue = this._state(completion);
-    const remoteEnabled = this._isTruthy(this._state(remote));
     const doorOpen = this._isDoorOpen(this._state(door));
     const powerOff = power && this._state(power) === 'off';
     const isPaused = this._isPaused(machineState);
@@ -375,7 +374,6 @@ class SamsungDishwasherCard extends HTMLElement {
     const actions = this._renderActions(runEntity, pauseEntity, stopEntity, isRunning, isPaused);
 
     const warnings = [
-      remote && !remoteEnabled ? this._renderWarning('mdi:remote-off', 'Smart Control non attivo') : '',
       doorOpen ? this._renderWarning('mdi:door-open', 'Porta aperta') : '',
       powerOff ? this._renderWarning('mdi:power', 'Lavastoviglie spenta') : '',
     ].filter(Boolean).join('');
@@ -387,7 +385,6 @@ class SamsungDishwasherCard extends HTMLElement {
           <div class="hero-title">${this._escapeHtml(config.name || 'Lavastoviglie Samsung')}</div>
           <div class="hero-subtitle">${this._escapeHtml(subtitleParts.join(' - ') || 'Stato non disponibile')}</div>
         </div>
-        ${remote ? `<div class="remote ${remoteEnabled ? 'enabled' : ''}"><ha-icon icon="${remoteEnabled ? 'mdi:remote' : 'mdi:remote-off'}"></ha-icon></div>` : ''}
       </div>
 
       <div class="status-line ${statusClass}"><span></span></div>
@@ -419,10 +416,6 @@ class SamsungDishwasherCard extends HTMLElement {
       return '';
     }
     return entity.state;
-  }
-
-  _isTruthy(value) {
-    return ['on', 'true', 'enabled', 'yes'].includes(String(value).toLowerCase());
   }
 
   _isDoorOpen(value) {
@@ -586,8 +579,8 @@ class SamsungDishwasherCard extends HTMLElement {
       return '';
     }
     return `
-      <button class="action-btn ${cssClass}" data-action="press" data-entity="${this._escapeAttr(entityId)}">
-        <ha-icon icon="${this._escapeAttr(icon)}"></ha-icon>
+      <button class="btn-action ${cssClass}" data-action="press" data-entity="${this._escapeAttr(entityId)}">
+        <div class="icon-wrap"><ha-icon icon="${this._escapeAttr(icon)}"></ha-icon></div>
         <span>${this._escapeHtml(label)}</span>
       </button>
     `;
