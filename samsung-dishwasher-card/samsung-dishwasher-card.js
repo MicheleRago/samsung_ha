@@ -1,4 +1,4 @@
-console.info("%c SAMSUNG DISHWASHER CARD %c v1.0.1 is loaded! ", "color: white; background: #00a6a6; font-weight: 700;", "color: #00a6a6; background: white; font-weight: 700;");
+console.info("%c SAMSUNG DISHWASHER CARD %c v1.0.2 is loaded! ", "color: white; background: #00a6a6; font-weight: 700;", "color: #00a6a6; background: white; font-weight: 700;");
 
 class SamsungDishwasherCard extends HTMLElement {
   set hass(hass) {
@@ -19,24 +19,27 @@ class SamsungDishwasherCard extends HTMLElement {
           box-shadow: var(--ha-card-box-shadow, 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12));
         }
         .hero {
-          display: grid;
-          grid-template-columns: 64px 1fr;
-          gap: 14px;
+          display: flex;
+          flex-direction: column;
           align-items: center;
-          margin-bottom: 16px;
+          margin-bottom: 18px;
+          text-align: center;
         }
         .hero-icon {
-          width: 64px;
-          height: 64px;
+          width: 86px;
+          height: 86px;
           border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
           background: rgba(0, 166, 166, 0.14);
           color: #00a6a6;
+          margin-bottom: 12px;
+          filter: drop-shadow(0 8px 16px rgba(0,0,0,0.18));
+          transition: all 0.3s ease;
         }
         .hero-icon ha-icon {
-          --mdc-icon-size: 42px;
+          --mdc-icon-size: 56px;
         }
         .hero.running .hero-icon {
           color: #1976d2;
@@ -45,6 +48,12 @@ class SamsungDishwasherCard extends HTMLElement {
         .hero.paused .hero-icon {
           color: #f57c00;
           background: rgba(245, 124, 0, 0.16);
+        }
+        .hero.off .hero-icon,
+        .hero.unavailable .hero-icon {
+          color: var(--disabled-text-color, #9e9e9e);
+          background: var(--secondary-background-color, rgba(120, 120, 120, 0.12));
+          filter: none;
         }
         .hero-title {
           font-size: 20px;
@@ -79,10 +88,17 @@ class SamsungDishwasherCard extends HTMLElement {
         .status-line.paused span {
           background: #f57c00;
         }
+        .status-line.off span,
+        .status-line.unavailable span {
+          background: var(--disabled-text-color, #9e9e9e);
+        }
         .metrics {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 10px;
+        }
+        .metrics:not(:empty) {
+          margin-bottom: 10px;
         }
         .tile {
           min-width: 0;
@@ -129,6 +145,9 @@ class SamsungDishwasherCard extends HTMLElement {
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 10px;
           margin-top: 10px;
+        }
+        .option-grid:empty {
+          display: none;
         }
         .switch-tile {
           display: flex;
@@ -253,15 +272,14 @@ class SamsungDishwasherCard extends HTMLElement {
             padding: 14px;
           }
           .hero {
-            grid-template-columns: 52px 1fr;
-            gap: 10px;
+            margin-bottom: 14px;
           }
           .hero-icon {
-            width: 52px;
-            height: 52px;
+            width: 72px;
+            height: 72px;
           }
           .hero-icon ha-icon {
-            --mdc-icon-size: 34px;
+            --mdc-icon-size: 46px;
           }
           .metrics,
           .option-grid {
@@ -331,22 +349,27 @@ class SamsungDishwasherCard extends HTMLElement {
     const powerOff = power && this._state(power) === 'off';
     const isPaused = this._isPaused(machineState);
     const isRunning = this._isRunning(machineState, jobState);
-    const statusClass = isPaused ? 'paused' : isRunning ? 'running' : 'ready';
+    const isUnavailable = !machineState;
+    const isComplete = this._isComplete(machineState, jobState);
+    const isIdle = !isRunning && !isPaused;
+    const canConfigure = isIdle && !powerOff;
+    const canStart = canConfigure && !doorOpen;
+    const statusClass = isUnavailable ? 'unavailable' : powerOff ? 'off' : isPaused ? 'paused' : isRunning ? 'running' : 'ready';
 
     const subtitleParts = [
       this._stateLabel(machineState),
-      jobState ? this._jobLabel(jobState) : '',
-      remainingValue ? this._formatDuration(remainingValue) : '',
+      isRunning || isPaused ? this._jobLabel(jobState) : '',
+      isRunning || isPaused ? this._formatDuration(remainingValue) : '',
     ].filter(Boolean);
 
-    const metricTiles = [
-      this._renderMetric('Stato', this._stateLabel(machineState), 'mdi:dishwasher'),
-      this._renderMetric('Fase', this._jobLabel(jobState), 'mdi:state-machine'),
-      this._renderMetric('Residuo', this._formatDuration(remainingValue), 'mdi:timer-outline'),
-      this._renderMetric('Fine', this._formatDateTime(completionValue), 'mdi:clock-outline'),
+    const progressTiles = [
+      isRunning || isPaused ? this._renderMetric('Programma', this._courseLabel(course && course.state), 'mdi:tune-vertical') : '',
+      isRunning || isPaused ? this._renderMetric('Fase', this._jobLabel(jobState), 'mdi:state-machine') : '',
+      isRunning || isPaused ? this._renderMetric('Residuo', this._formatDuration(remainingValue), 'mdi:timer-outline') : '',
+      isRunning || isPaused || isComplete ? this._renderMetric('Fine', this._formatDateTime(completionValue), 'mdi:clock-outline') : '',
     ].filter(Boolean).join('');
 
-    const courseHtml = course && Array.isArray(course.attributes.options) ? `
+    const courseHtml = canConfigure && course && Array.isArray(course.attributes.options) ? `
       <div class="tile full">
         <div class="tile-header"><ha-icon icon="mdi:tune-vertical"></ha-icon><span>Programma</span></div>
         <div class="select-wrapper">
@@ -360,18 +383,18 @@ class SamsungDishwasherCard extends HTMLElement {
       </div>
     ` : '';
 
-    const optionTiles = [
+    const optionTiles = canConfigure ? [
       this._renderSwitch(getState('half_load'), entityId('half_load'), 'Mezzo carico', 'mdi:circle-half-full'),
       this._renderSwitch(getState('speed_booster'), entityId('speed_booster'), 'Speed Booster', 'mdi:fast-forward'),
       this._renderSwitch(getState('sanitize'), entityId('sanitize'), 'Sanitizzazione', 'mdi:water-boiler'),
       this._renderSwitch(getState('auto_open_door'), entityId('auto_open_door'), 'Auto apertura', 'mdi:door-open'),
-      this._renderSwitch(power, entityId('power'), 'Power', 'mdi:power'),
-    ].filter(Boolean).join('');
+    ].filter(Boolean).join('') : '';
+    const powerTile = isIdle ? this._renderSwitch(power, entityId('power'), 'Power', 'mdi:power') : '';
 
     const runEntity = entityId('run_btn') || entityId('start_btn');
     const pauseEntity = entityId('pause_btn');
     const stopEntity = entityId('stop_btn');
-    const actions = this._renderActions(runEntity, pauseEntity, stopEntity, isRunning, isPaused);
+    const actions = this._renderActions(runEntity, pauseEntity, stopEntity, isRunning, isPaused, canStart);
 
     const warnings = [
       doorOpen ? this._renderWarning('mdi:door-open', 'Porta aperta') : '',
@@ -389,12 +412,10 @@ class SamsungDishwasherCard extends HTMLElement {
 
       <div class="status-line ${statusClass}"><span></span></div>
 
-      <div class="metrics">
-        ${metricTiles}
-        ${courseHtml}
-      </div>
+      ${progressTiles ? `<div class="metrics">${progressTiles}</div>` : ''}
+      ${courseHtml ? `<div class="metrics">${courseHtml}</div>` : ''}
 
-      ${optionTiles ? `<div class="option-grid">${optionTiles}</div>` : ''}
+      ${optionTiles || powerTile ? `<div class="option-grid">${optionTiles}${powerTile}</div>` : ''}
       ${actions}
       ${warnings ? `<div class="warnings">${warnings}</div>` : ''}
     `;
@@ -436,6 +457,12 @@ class SamsungDishwasherCard extends HTMLElement {
       return true;
     }
     return !!job && !['ready', 'finish', 'finished', 'finito', 'none', 'idle', 'stop', 'stopped'].includes(job);
+  }
+
+  _isComplete(machineState, jobState) {
+    const machine = String(machineState).toLowerCase();
+    const job = String(jobState).toLowerCase();
+    return ['finish', 'finished', 'finito'].includes(machine) || ['finish', 'finished', 'finito'].includes(job);
   }
 
   _stateLabel(value) {
@@ -559,9 +586,9 @@ class SamsungDishwasherCard extends HTMLElement {
     `;
   }
 
-  _renderActions(runEntity, pauseEntity, stopEntity, isRunning, isPaused) {
+  _renderActions(runEntity, pauseEntity, stopEntity, isRunning, isPaused, canStart) {
     const buttons = [];
-    if (!isRunning || isPaused) {
+    if (isPaused || (!isRunning && canStart)) {
       buttons.push(this._renderAction(runEntity, isPaused ? 'Riprendi' : 'Avvia', 'mdi:play', 'start'));
     }
     if (isRunning && !isPaused) {
