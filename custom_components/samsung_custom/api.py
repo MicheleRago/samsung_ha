@@ -1,5 +1,6 @@
 import logging
 import aiohttp
+import json
 from typing import Any, Dict
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,6 +61,7 @@ class SmartThingsApi:
 
     async def _request(self, method: str, url: str, **kwargs) -> Any:
         """Make an API request and handle token refresh on 401."""
+        method = method.upper()
         async with aiohttp.ClientSession() as session:
             kwargs["headers"] = self.headers
             async with session.request(method, url, **kwargs) as response:
@@ -68,16 +70,35 @@ class SmartThingsApi:
                     await self._do_refresh_token()
                     kwargs["headers"] = self.headers
                     async with session.request(method, url, **kwargs) as retry_response:
+                        retry_text = await retry_response.text()
+                        if method != "GET":
+                            _LOGGER.warning(
+                                "SmartThings response: %s %s status=%s body=%s",
+                                method,
+                                url,
+                                retry_response.status,
+                                retry_text,
+                            )
                         retry_response.raise_for_status()
-                        return await retry_response.json()
+                        if retry_response.status == 204 or not retry_text:
+                            return None
+                        return json.loads(retry_text)
                 
+                text = await response.text()
+                if method != "GET":
+                    _LOGGER.warning(
+                        "SmartThings response: %s %s status=%s body=%s",
+                        method,
+                        url,
+                        response.status,
+                        text,
+                    )
                 if response.status >= 400:
-                    text = await response.text()
                     _LOGGER.error(f"API Error {response.status}: {text}")
                 response.raise_for_status()
-                if response.status == 204:
+                if response.status == 204 or not text:
                     return None
-                return await response.json()
+                return json.loads(text)
 
     async def get_devices(self) -> list:
         """Get all devices."""
@@ -107,7 +128,6 @@ class SmartThingsApi:
             }
         ]
         
-        import json
         _LOGGER.warning(
             "SmartThings request: POST %s payload=%s",
             url,

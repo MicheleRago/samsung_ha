@@ -131,7 +131,9 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                 # Pass mode, cookTime in seconds (e.g. 1800 for 30 mins), and temperature
                 # Many Samsung ovens silently ignore the start command if cookTime is 0
                 if mode == "FanConventional":
-                    args = [_build_oven_device_payload(mode, cook_time, api_temp)]
+                    cap = "execute"
+                    cmd = "execute"
+                    args = ["/devices/0", _build_oven_device_payload(mode, cook_time, api_temp)]
                 else:
                     args = [mode, api_cook_time, api_temp]
                 if str(remote_enabled).lower() in ("false", "off", "disabled"):
