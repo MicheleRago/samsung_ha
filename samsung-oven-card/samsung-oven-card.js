@@ -1,4 +1,4 @@
-console.info("%c SAMSUNG OVEN CARD %c v1.0.2 is loaded! ", "color: white; background: #ff9800; font-weight: 700;", "color: #ff9800; background: white; font-weight: 700;");
+console.info("%c SAMSUNG OVEN CARD %c v1.0.3 is loaded! ", "color: white; background: #ff9800; font-weight: 700;", "color: #ff9800; background: white; font-weight: 700;");
 
 class SamsungOvenCard extends HTMLElement {
   set hass(hass) {
@@ -302,8 +302,9 @@ class SamsungOvenCard extends HTMLElement {
 
     const UIModeMap = {
       "heating": "Convenzione",
-      "Bake": "Ventola convenzionale",
-      "Conventional": "Ventola convenzionale",
+      "FanConventional": "Ventola convenzionale",
+      "Bake": "Convenzione",
+      "Conventional": "Convenzione",
       "Broil": "Grill Grande",
       "ConvectionBroil": "Grill ventilato",
       "ConvectionRoast": "Riscaldamento superiore+convenzione",

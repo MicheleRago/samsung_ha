@@ -75,15 +75,16 @@ SAMSUNG_WASHER_CYCLES = {
 
 OVEN_MODE_MAP = {
     # Labels aligned with the SmartThings app for this oven model.
+    "FanConventional": "Ventola convenzionale",
     "heating": "Convenzione",
-    "Bake": "Ventola convenzionale",
+    "Conventional": "Convenzione",
+    "Bake": "Convenzione",
     "Broil": "Grill Grande",
     "ConvectionBroil": "Grill ventilato",
     "ConvectionRoast": "Riscaldamento superiore+convenzione",
     "ConvectionBake": "Riscaldamento inferiore+convenzione",
     "SlimStrong": "Cottura intensiva",
     "BottomHeat": "Rosolatura",
-    "Conventional": "Ventola convenzionale",
     "KeepWarm": "Mantenimento caldo",
     "BreadProof": "Lievitazione",
     "AirFryer": "Air Fryer",
@@ -104,8 +105,8 @@ OVEN_MODE_MAP = {
 }
 
 OVEN_DEFAULT_MODES = (
-    "heating",
-    "Bake",
+    "Conventional",
+    "FanConventional",
     "Broil",
     "ConvectionBroil",
     "ConvectionRoast",
@@ -125,16 +126,19 @@ OVEN_EXTRA_MODES = (
 
 OVEN_SELECT_MODES = OVEN_DEFAULT_MODES + OVEN_EXTRA_MODES
 
-OVEN_MODE_COMMAND_ALIASES = {}
+OVEN_MODE_COMMAND_ALIASES = {
+    "heating": "Conventional",
+    "Bake": "Conventional",
+}
 
 OVEN_MODE_NAME_ALIASES = {
-    "Convenzione": "heating",
-    "Convezione": "heating",
-    "Forno ventilato": "heating",
-    "Ventilato": "heating",
-    "Cottura ventilata": "heating",
-    "Ventola convenzionale": "Bake",
-    "Ventola convenzionata": "Bake",
+    "Convenzione": "Conventional",
+    "Convezione": "Conventional",
+    "Forno ventilato": "Conventional",
+    "Ventilato": "Conventional",
+    "Cottura ventilata": "Conventional",
+    "Ventola convenzionale": "FanConventional",
+    "Ventola convenzionata": "FanConventional",
     "Grill Grande": "Broil",
     "Grill ventilato": "ConvectionBroil",
     "Riscaldamento superiore+convenzione": "ConvectionRoast",

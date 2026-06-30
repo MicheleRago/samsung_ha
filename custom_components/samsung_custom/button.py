@@ -10,6 +10,36 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+
+def _format_operation_time(cook_time_minutes: float) -> str:
+    """Convert minutes to SmartThings Device.Operation.operationTime."""
+    total_seconds = max(0, int(float(cook_time_minutes) * 60))
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
+def _build_oven_device_payload(mode: str, cook_time_minutes: float, temp_celsius: int) -> dict:
+    """Build the structured Samsung oven payload used by newer oven modes."""
+    return {
+        "Device": {
+            "Mode": {
+                "modes": [mode],
+            },
+            "Operation": {
+                "operationTime": _format_operation_time(cook_time_minutes),
+            },
+            "Temperatures": [
+                {
+                    "id": "0",
+                    "desired": int(temp_celsius),
+                    "unit": "Celsius",
+                }
+            ],
+        }
+    }
+
+
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the button platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -99,7 +129,10 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                 
                 # Pass mode, cookTime in seconds (e.g. 1800 for 30 mins), and temperature
                 # Many Samsung ovens silently ignore the start command if cookTime is 0
-                args = [mode, api_cook_time, api_temp]
+                if mode == "FanConventional":
+                    args = [_build_oven_device_payload(mode, cook_time, api_temp)]
+                else:
+                    args = [mode, api_cook_time, api_temp]
                 if str(remote_enabled).lower() in ("false", "off", "disabled"):
                     _LOGGER.warning(
                         "Samsung oven remote control is disabled; the start command may be ignored"
@@ -109,10 +142,11 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                         "Samsung oven door is open; the start command may be ignored"
                     )
                 _LOGGER.info(
-                    "Starting Samsung oven with mode=%s, cook_time=%ss, temp=%s",
+                    "Starting Samsung oven with mode=%s, cook_time=%ss, temp=%s, args=%s",
                     mode,
                     api_cook_time,
                     api_temp,
+                    args,
                 )
                 
             await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd, args)
