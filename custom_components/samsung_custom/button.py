@@ -1,3 +1,4 @@
+import json
 import logging
 from homeassistant.components.button import ButtonEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -141,12 +142,16 @@ class GenericCommandButton(CoordinatorEntity, ButtonEntity):
                     _LOGGER.warning(
                         "Samsung oven door is open; the start command may be ignored"
                     )
-                _LOGGER.info(
-                    "Starting Samsung oven with mode=%s, cook_time=%ss, temp=%s, args=%s",
+                _LOGGER.error(
+                    "OVEN SMARTTHINGS REQUEST: device_id=%s component=%s capability=%s command=%s mode=%s cook_time=%ss temp=%s arguments=%s",
+                    self._device_id,
+                    self._component,
+                    cap,
+                    cmd,
                     mode,
                     api_cook_time,
                     api_temp,
-                    args,
+                    json.dumps(args, ensure_ascii=False),
                 )
                 
             await self.coordinator.api.execute_command(self._device_id, self._component, cap, cmd, args)
