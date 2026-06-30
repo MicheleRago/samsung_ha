@@ -1,4 +1,4 @@
-console.info("%c SAMSUNG OVEN CARD %c v1.0.1 is loaded! ", "color: white; background: #ff9800; font-weight: 700;", "color: #ff9800; background: white; font-weight: 700;");
+console.info("%c SAMSUNG OVEN CARD %c v1.0.2 is loaded! ", "color: white; background: #ff9800; font-weight: 700;", "color: #ff9800; background: white; font-weight: 700;");
 
 class SamsungOvenCard extends HTMLElement {
   set hass(hass) {
@@ -301,35 +301,36 @@ class SamsungOvenCard extends HTMLElement {
     }
 
     const UIModeMap = {
-      "Bake": "Cottura tradizionale",
-      "heating": "Riscaldamento",
-      "Conventional": "Statico",
+      "heating": "Convenzione",
+      "Bake": "Ventola convenzionale",
+      "Conventional": "Ventola convenzionale",
       "Broil": "Grill Grande",
       "ConvectionBroil": "Grill ventilato",
+      "ConvectionRoast": "Riscaldamento superiore+convenzione",
+      "ConvectionBake": "Riscaldamento inferiore+convenzione",
       "SlimStrong": "Cottura intensiva",
       "BottomHeat": "Rosolatura",
-      "ConvectionRoast": "Arrosto ventilato",
-      "ConvectionBake": "Forno ventilato",
       "KeepWarm": "Mantenimento caldo",
       "BreadProof": "Lievitazione",
       "AirFryer": "Air Fryer",
       "Dehydrate": "Disidratazione",
       "SelfClean": "Autopulizia",
       "SteamClean": "Pulizia a vapore",
-      "Convezione": "Forno ventilato",
-      "Ventola convenzionale": "Forno ventilato",
-      "Ventola convenzionata": "Forno ventilato",
-      "Riscaldamento superiore + convenzione": "Forno ventilato",
-      "Riscaldamento superiore + convezione": "Forno ventilato",
-      "Riscaldamento inferiore + convenzione": "Forno ventilato",
-      "Riscaldamento inferiore + convezione": "Forno ventilato"
+      "Convezione": "Convenzione",
+      "Forno ventilato": "Convenzione",
+      "Ventilato": "Convenzione",
+      "Ventola convenzionata": "Ventola convenzionale",
+      "Riscaldamento superiore + convenzione": "Riscaldamento superiore+convenzione",
+      "Riscaldamento superiore + convezione": "Riscaldamento superiore+convenzione",
+      "Riscaldamento inferiore + convenzione": "Riscaldamento inferiore+convenzione",
+      "Riscaldamento inferiore + convezione": "Riscaldamento inferiore+convenzione"
     };
 
     const allowedLabels = [
-      "Cottura tradizionale", "Statico", "Riscaldamento", "Grill Grande",
-      "Grill ventilato", "Cottura intensiva", "Rosolatura", "Arrosto ventilato",
-      "Forno ventilato", "Mantenimento caldo", "Lievitazione", "Air Fryer",
-      "Disidratazione", "Autopulizia", "Pulizia a vapore"
+      "Convenzione", "Ventola convenzionale", "Grill Grande", "Grill ventilato",
+      "Riscaldamento superiore+convenzione", "Riscaldamento inferiore+convenzione",
+      "Cottura intensiva", "Rosolatura", "Mantenimento caldo", "Lievitazione",
+      "Air Fryer", "Disidratazione", "Autopulizia", "Pulizia a vapore"
     ];
 
     const modeLabel = value => UIModeMap[value] || value;

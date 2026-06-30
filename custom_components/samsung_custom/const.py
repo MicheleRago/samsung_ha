@@ -74,17 +74,16 @@ SAMSUNG_WASHER_CYCLES = {
 }
 
 OVEN_MODE_MAP = {
-    # "heating" can appear in status, but SmartThings rejects it as a start
-    # command mode, so it is only a read alias.
-    "Bake": "Cottura tradizionale",
-    "Conventional": "Statico",
-    "heating": "Riscaldamento",
+    # Labels aligned with the SmartThings app for this oven model.
+    "heating": "Convenzione",
+    "Bake": "Ventola convenzionale",
     "Broil": "Grill Grande",
     "ConvectionBroil": "Grill ventilato",
+    "ConvectionRoast": "Riscaldamento superiore+convenzione",
+    "ConvectionBake": "Riscaldamento inferiore+convenzione",
     "SlimStrong": "Cottura intensiva",
     "BottomHeat": "Rosolatura",
-    "ConvectionRoast": "Arrosto ventilato",
-    "ConvectionBake": "Forno ventilato",
+    "Conventional": "Ventola convenzionale",
     "KeepWarm": "Mantenimento caldo",
     "BreadProof": "Lievitazione",
     "AirFryer": "Air Fryer",
@@ -105,10 +104,17 @@ OVEN_MODE_MAP = {
 }
 
 OVEN_DEFAULT_MODES = (
+    "heating",
     "Bake",
     "Broil",
-    "ConvectionBake",
+    "ConvectionBroil",
     "ConvectionRoast",
+    "ConvectionBake",
+    "SlimStrong",
+    "BottomHeat",
+)
+
+OVEN_EXTRA_MODES = (
     "KeepWarm",
     "BreadProof",
     "AirFryer",
@@ -117,31 +123,36 @@ OVEN_DEFAULT_MODES = (
     "SteamClean",
 )
 
-OVEN_EXTRA_MODES = (
-    "ConvectionBroil",
-    "SlimStrong",
-    "BottomHeat",
-)
-
 OVEN_SELECT_MODES = OVEN_DEFAULT_MODES + OVEN_EXTRA_MODES
 
-OVEN_MODE_COMMAND_ALIASES = {
-    "heating": "ConvectionBake",
-}
+OVEN_MODE_COMMAND_ALIASES = {}
 
 OVEN_MODE_NAME_ALIASES = {
-    "Convezione": "ConvectionBake",
-    "Forno ventilato": "ConvectionBake",
-    "Ventilato": "ConvectionBake",
-    "Cottura ventilata": "ConvectionBake",
-    "Riscaldamento superiore + convenzione": "ConvectionBake",
-    "Riscaldamento superiore + convezione": "ConvectionBake",
+    "Convenzione": "heating",
+    "Convezione": "heating",
+    "Forno ventilato": "heating",
+    "Ventilato": "heating",
+    "Cottura ventilata": "heating",
+    "Ventola convenzionale": "Bake",
+    "Ventola convenzionata": "Bake",
+    "Grill Grande": "Broil",
+    "Grill ventilato": "ConvectionBroil",
+    "Riscaldamento superiore+convenzione": "ConvectionRoast",
+    "Riscaldamento superiore+convezione": "ConvectionRoast",
+    "Riscaldamento superiore + convenzione": "ConvectionRoast",
+    "Riscaldamento superiore + convezione": "ConvectionRoast",
+    "Riscaldamento inferiore+convenzione": "ConvectionBake",
+    "Riscaldamento inferiore+convezione": "ConvectionBake",
     "Riscaldamento inferiore + convenzione": "ConvectionBake",
     "Riscaldamento inferiore + convezione": "ConvectionBake",
-    "Ventola convenzionale": "ConvectionBake",
-    "Ventola convenzionata": "ConvectionBake",
-    "Cottura tradizionale": "Bake",
-    "Statico": "Conventional",
+    "Cottura intensiva": "SlimStrong",
+    "Rosolatura": "BottomHeat",
+    "Mantenimento caldo": "KeepWarm",
+    "Lievitazione": "BreadProof",
+    "Air Fryer": "AirFryer",
+    "Disidratazione": "Dehydrate",
+    "Autopulizia": "SelfClean",
+    "Pulizia a vapore": "SteamClean",
 }
 
 
