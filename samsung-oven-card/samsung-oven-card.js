@@ -1,4 +1,4 @@
-console.info("%c SAMSUNG OVEN CARD %c v1.0.0 is loaded! ", "color: white; background: #ff9800; font-weight: 700;", "color: #ff9800; background: white; font-weight: 700;");
+console.info("%c SAMSUNG OVEN CARD %c v1.0.1 is loaded! ", "color: white; background: #ff9800; font-weight: 700;", "color: #ff9800; background: white; font-weight: 700;");
 
 class SamsungOvenCard extends HTMLElement {
   set hass(hass) {
@@ -315,7 +315,14 @@ class SamsungOvenCard extends HTMLElement {
       "AirFryer": "Air Fryer",
       "Dehydrate": "Disidratazione",
       "SelfClean": "Autopulizia",
-      "SteamClean": "Pulizia a vapore"
+      "SteamClean": "Pulizia a vapore",
+      "Convezione": "Forno ventilato",
+      "Ventola convenzionale": "Forno ventilato",
+      "Ventola convenzionata": "Forno ventilato",
+      "Riscaldamento superiore + convenzione": "Forno ventilato",
+      "Riscaldamento superiore + convezione": "Forno ventilato",
+      "Riscaldamento inferiore + convenzione": "Forno ventilato",
+      "Riscaldamento inferiore + convezione": "Forno ventilato"
     };
 
     const allowedLabels = [
@@ -325,18 +332,20 @@ class SamsungOvenCard extends HTMLElement {
       "Disidratazione", "Autopulizia", "Pulizia a vapore"
     ];
 
+    const modeLabel = value => UIModeMap[value] || value;
+
     let selectHtml = '';
     if (ovenMode && ovenMode.attributes && ovenMode.attributes.options) {
       // Create a unique set of options based on the mapped labels
       const processedLabels = new Set();
       
       ovenMode.attributes.options.forEach(opt => {
-        let label = UIModeMap[opt] || opt;
+        let label = modeLabel(opt);
         
         // If it's one of our 8 allowed labels and we haven't added it yet
         if (allowedLabels.includes(label) && !processedLabels.has(label)) {
           processedLabels.add(label);
-          const isSelected = (UIModeMap[ovenMode.state] || ovenMode.state) === label;
+          const isSelected = modeLabel(ovenMode.state) === label;
           selectHtml += `<option value="${opt}" ${isSelected ? 'selected' : ''}>${label}</option>`;
         }
       });

@@ -134,6 +134,8 @@ OVEN_MODE_NAME_ALIASES = {
     "Forno ventilato": "ConvectionBake",
     "Ventilato": "ConvectionBake",
     "Cottura ventilata": "ConvectionBake",
+    "Riscaldamento superiore + convenzione": "ConvectionBake",
+    "Riscaldamento superiore + convezione": "ConvectionBake",
     "Riscaldamento inferiore + convenzione": "ConvectionBake",
     "Riscaldamento inferiore + convezione": "ConvectionBake",
     "Ventola convenzionale": "ConvectionBake",
