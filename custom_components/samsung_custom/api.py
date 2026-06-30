@@ -108,7 +108,11 @@ class SmartThingsApi:
         ]
         
         import json
-        _LOGGER.debug("SmartThings command payload: %s", json.dumps(payload))
+        _LOGGER.warning(
+            "SmartThings request: POST %s payload=%s",
+            url,
+            json.dumps(payload, ensure_ascii=False),
+        )
         
         await self._request("POST", url, json=payload)
         _LOGGER.debug(f"Command executed successfully: {component}.{capability}.{command}({arguments})")
