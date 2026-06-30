@@ -12,7 +12,19 @@ Custom Lovelace card for Samsung SmartThings washers exposed by this integration
 
 ## Configuration
 
-Add a manual Lovelace card and replace the entity IDs with yours.
+Add a manual Lovelace card. If your washer entities start with the same prefix, use the short form:
+
+```yaml
+type: custom:samsung-washer-card
+name: Lavatrice Samsung
+icon: mdi:washing-machine
+entity_prefix: lavatrice
+```
+
+This expands to IDs such as `sensor.lavatrice_washer_state`, `select.lavatrice_washer_course`, and `button.lavatrice_run`.
+For the cycle dropdown, the card also tries common alternatives such as `select.lavatrice_washer_cycle`, `select.lavatrice_course`, and `select.lavatrice_cycle`.
+
+If your entity IDs do not follow that pattern, use explicit entities:
 
 ```yaml
 type: custom:samsung-washer-card
@@ -38,10 +50,21 @@ Optional entities, if your washer exposes them:
   completion_time: sensor.lavatrice_completion_time
 ```
 
-Only `machine_state` is required. Remove any line for entities your washer does not expose.
+You can also combine both forms and override only some entities:
+
+```yaml
+type: custom:samsung-washer-card
+name: Lavatrice Samsung
+entity_prefix: lavatrice
+entities:
+  door: binary_sensor.lavatrice_oblo
+  course: select.lavatrice_programma
+```
+
+Only `machine_state` is required when using explicit entities. Remove any line for entities your washer does not expose.
 
 ## Behavior
 
 - When idle, the card shows cycle selection, available options, power, and start.
 - When running or paused, it hides setup controls and shows progress plus pause/stop.
-- When the door is open, power is off, or Smart Control is disabled, it hides start and shows a warning.
+- When the door is open, power is off, or Smart Control is disabled, it keeps the controls visible and shows a warning.

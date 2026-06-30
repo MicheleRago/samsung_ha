@@ -1,4 +1,4 @@
-console.info("%c SAMSUNG WASHER CARD %c v1.0.0 is loaded! ", "color: white; background: #1976d2; font-weight: 700;", "color: #1976d2; background: white; font-weight: 700;");
+console.info("%c SAMSUNG WASHER CARD %c v1.0.3 is loaded! ", "color: white; background: #1976d2; font-weight: 700;", "color: #1976d2; background: white; font-weight: 700;");
 
 class SamsungWasherCard extends HTMLElement {
   set hass(hass) {
@@ -330,9 +330,12 @@ class SamsungWasherCard extends HTMLElement {
     }
 
     const config = this._config;
-    const entities = config.entities || {};
-    const getState = key => entities[key] ? hass.states[entities[key]] : undefined;
-    const entityId = key => entities[key] || '';
+    const entities = this._entities || {};
+    const entityId = key => this._resolveEntityId(hass, entities[key]);
+    const getState = key => {
+      const id = entityId(key);
+      return id ? hass.states[id] : undefined;
+    };
 
     const machine = getState('machine_state');
     const job = getState('job_state');
@@ -357,8 +360,7 @@ class SamsungWasherCard extends HTMLElement {
     const isUnavailable = !machineState;
     const isComplete = this._isComplete(machineState, jobState);
     const isIdle = !isActive;
-    const canConfigure = !isUnavailable && isIdle && !powerOff;
-    const canStart = canConfigure && !doorOpen && !remoteDisabled;
+    const showSetup = isIdle;
     const statusClass = isUnavailable ? 'unavailable' : powerOff ? 'off' : isPaused ? 'paused' : isRunning ? 'running' : 'ready';
 
     const subtitleParts = [
@@ -374,7 +376,7 @@ class SamsungWasherCard extends HTMLElement {
       isActive || isComplete ? this._renderMetric('Fine', this._formatDateTime(completionValue), 'mdi:clock-outline') : '',
     ].filter(Boolean).join('');
 
-    const courseHtml = canConfigure && course && Array.isArray(course.attributes.options) ? `
+    const courseHtml = showSetup && course && Array.isArray(course.attributes.options) ? `
       <div class="tile full">
         <div class="tile-header"><ha-icon icon="mdi:tune-vertical"></ha-icon><span>Programma</span></div>
         <div class="select-wrapper">
@@ -388,7 +390,7 @@ class SamsungWasherCard extends HTMLElement {
       </div>
     ` : '';
 
-    const optionTiles = canConfigure ? [
+    const optionTiles = showSetup ? [
       this._renderSwitch(getState('child_lock'), entityId('child_lock'), 'Blocco bambini', 'mdi:lock-outline'),
     ].filter(Boolean).join('') : '';
     const powerTile = isIdle ? this._renderSwitch(power, entityId('power'), 'Power', 'mdi:power') : '';
@@ -396,12 +398,13 @@ class SamsungWasherCard extends HTMLElement {
     const runEntity = entityId('run_btn') || entityId('start_btn');
     const pauseEntity = entityId('pause_btn');
     const stopEntity = entityId('stop_btn');
-    const actions = this._renderActions(runEntity, pauseEntity, stopEntity, isActive, isPaused, canStart);
+    const actions = this._renderActions(runEntity, pauseEntity, stopEntity, isActive, isPaused);
 
     const warnings = [
       doorOpen ? this._renderWarning('mdi:door-open', 'Porta aperta') : '',
       powerOff ? this._renderWarning('mdi:power', 'Lavatrice spenta') : '',
       remoteDisabled && !powerOff ? this._renderWarning('mdi:remote-off', 'Smart Control non attivo') : '',
+      showSetup && entityId('course') && !course ? this._renderWarning('mdi:tune-vertical', `Programma non trovato: ${entityId('course')}`) : '',
     ].filter(Boolean).join('');
 
     this.content.innerHTML = `
@@ -422,9 +425,14 @@ class SamsungWasherCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config.entities) {
-      throw new Error('You need to define entities');
+    if (!config.entities && !config.entity_prefix && !config.device_name) {
+      throw new Error('You need to define either entities, entity_prefix or device_name');
     }
+    const prefix = config.entity_prefix || this._slug(config.device_name || '');
+    this._entities = {
+      ...(prefix ? this._entitiesFromPrefix(prefix) : {}),
+      ...(config.entities || {}),
+    };
     this._config = config;
   }
 
@@ -437,6 +445,43 @@ class SamsungWasherCard extends HTMLElement {
       return '';
     }
     return entity.state;
+  }
+
+  _entitiesFromPrefix(prefix) {
+    return {
+      machine_state: [`sensor.${prefix}_washer_state`, `sensor.${prefix}_machine_state`, `sensor.${prefix}_state`],
+      job_state: [`sensor.${prefix}_job_state`, `sensor.${prefix}_washer_job_state`],
+      remaining_time: [`sensor.${prefix}_remaining_time`, `sensor.${prefix}_remaining_time_str`],
+      completion_time: [`sensor.${prefix}_completion_time`, `sensor.${prefix}_washer_completion_time`],
+      course: [`select.${prefix}_washer_course`, `select.${prefix}_washer_cycle`, `select.${prefix}_course`, `select.${prefix}_cycle`],
+      run_btn: [`button.${prefix}_run`, `button.${prefix}_start`, `button.${prefix}_avvia`],
+      pause_btn: [`button.${prefix}_pause`, `button.${prefix}_pausa`],
+      stop_btn: [`button.${prefix}_stop`, `button.${prefix}_ferma`],
+      power: [`switch.${prefix}_power`],
+      remote_control: [`sensor.${prefix}_remote_control`],
+      door: [`binary_sensor.${prefix}_door`, `binary_sensor.${prefix}_oblo`],
+      child_lock: [`switch.${prefix}_child_lock`, `switch.${prefix}_kids_lock`],
+    };
+  }
+
+  _resolveEntityId(hass, value) {
+    if (!value) {
+      return '';
+    }
+    if (Array.isArray(value)) {
+      return value.find(entityId => hass.states[entityId]) || value[0] || '';
+    }
+    return value;
+  }
+
+  _slug(value) {
+    return String(value)
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
   }
 
   _isTruthy(value) {
@@ -602,9 +647,9 @@ class SamsungWasherCard extends HTMLElement {
     `;
   }
 
-  _renderActions(runEntity, pauseEntity, stopEntity, isActive, isPaused, canStart) {
+  _renderActions(runEntity, pauseEntity, stopEntity, isActive, isPaused) {
     const buttons = [];
-    if (isPaused || (!isActive && canStart)) {
+    if (isPaused || !isActive) {
       buttons.push(this._renderAction(runEntity, isPaused ? 'Riprendi' : 'Avvia', 'mdi:play', 'start'));
     }
     if (isActive && !isPaused) {
