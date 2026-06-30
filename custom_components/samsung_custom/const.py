@@ -91,7 +91,7 @@ OVEN_MODE_MAP = {
 }
 
 OVEN_SELECT_MODES = (
-    "Conventional",
+    "Bake",
     "FanConventional",
     "Broil",
     "ConvectionBroil",
@@ -102,13 +102,13 @@ OVEN_SELECT_MODES = (
 )
 
 OVEN_MODE_COMMAND_ALIASES = {
-    "heating": "Conventional",
-    "Bake": "Conventional",
+    "heating": "Bake",
+    "Conventional": "Bake",
 }
 
 OVEN_MODE_NAME_ALIASES = {
-    "Convenzione": "Conventional",
-    "Convezione": "Conventional",
+    "Convenzione": "Bake",
+    "Convezione": "Bake",
     "Ventola convenzionale": "FanConventional",
     "Ventola convenzionata": "FanConventional",
     "Grill Grande": "Broil",

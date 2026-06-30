@@ -17,7 +17,7 @@ from .const import (
 )
 
 DEFAULT_OVEN_COOK_TIME = 30.0
-DEFAULT_OVEN_MODE = "Conventional"
+DEFAULT_OVEN_MODE = "Bake"
 DEFAULT_OVEN_TEMPERATURE = 200
 OVEN_PENDING_STATE_DATA_KEY = "pending_oven_state"
 
